@@ -1,0 +1,8 @@
+{
+  "name": "ziranji",
+  "version": "1.0.0",
+  "private": true,
+  "description": "自然急：饮食饮水运动记录 + 身体闹钟。零依赖 Node 服务。",
+  "scripts": { "start": "node server.js" },
+  "engines": { "node": ">=18" }
+}

@@ -1,0 +1,1426 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#1D1C1A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>自然急</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* 布局：上半是深炭色舞台（液态玻璃杯 + 刻度表盘），下半是米色卡片承载数据与操作；手机全屏，桌面居中一台手机 */
+  --coal:#1D1C1A;
+  --coal-2:#2A2826;
+  --cream:#ECE7DF;
+  --ink:#1A1917;
+  --mute:#8B867E;
+  --glow:#F3EFE8;
+  --dawn:#D98F68;
+  --num:"Jost","Futura","Avenir Next",system-ui,sans-serif;
+  --body:"Noto Sans SC","PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overscroll-behavior:none}
+body{font-family:var(--body);background:#D9D7D3;color:var(--ink);-webkit-font-smoothing:antialiased;display:flex;align-items:center;justify-content:center;gap:56px}
+button,input{font:inherit;color:inherit}
+button{background:none;border:0;cursor:pointer}
+button:focus-visible,input:focus-visible,label:focus-within{outline:2px solid var(--dawn);outline-offset:2px}
+.n{font-family:var(--num);font-variant-numeric:tabular-nums}
+[hidden]{display:none!important}
+
+/* 桌面旁注 */
+.aside{max-width:250px;display:flex;flex-direction:column;gap:14px;color:#3A3835}
+.aside h1{font-size:40px;letter-spacing:.12em;font-weight:500}
+.aside h1 small{display:block;font-family:var(--num);font-weight:300;font-size:18px;letter-spacing:.2em;color:var(--mute);margin-top:6px}
+.aside p{font-size:13.5px;line-height:1.8;color:#5F5A53}
+.aside .tag{align-self:flex-start;font-size:11.5px;padding:4px 10px;border:1px solid #0002;border-radius:99px}
+
+/* 外壳 */
+.app{position:relative;width:390px;height:min(844px,calc(100vh - 40px));border-radius:48px;background:var(--coal);overflow:hidden;overflow:clip;display:flex;flex-direction:column;box-shadow:0 40px 90px -30px #0008,0 0 0 1px #0003;isolation:isolate}
+@media (max-width:600px){
+  body{display:block;background:var(--coal)}
+  .aside{display:none}
+  .app{width:100%;height:100vh;height:100dvh;border-radius:0;box-shadow:none}
+}
+
+/* 液态玻璃材质 */
+.lg{background:linear-gradient(180deg,#ffffff1f,#ffffff08);-webkit-backdrop-filter:blur(18px) saturate(170%);backdrop-filter:blur(18px) saturate(170%);border:1px solid #ffffff2e;box-shadow:inset 0 1px 0 #ffffff59,inset 0 -1px 0 #ffffff0d,0 10px 30px -10px #0009}
+
+/* 顶栏 */
+.bar{position:relative;z-index:5;display:flex;align-items:center;justify-content:space-between;padding:calc(14px + env(safe-area-inset-top)) 18px 0;color:var(--glow)}
+.nav{display:flex;padding:4px;border-radius:99px;gap:2px;position:relative}
+.nav button{position:relative;z-index:1;padding:7px 15px;border-radius:99px;font-size:13px;letter-spacing:.06em;color:#ffffff8c;transition:color .3s}
+.nav button[aria-selected="true"]{color:var(--coal)}
+.nav .pill{position:absolute;top:4px;bottom:4px;border-radius:99px;background:var(--glow);box-shadow:0 2px 10px #0005,inset 0 1px 0 #fff;transition:left .4s cubic-bezier(.3,1.3,.5,1),width .4s cubic-bezier(.3,1.3,.5,1)}
+.round{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;color:var(--glow)}
+.word{width:38px;height:38px;display:grid;place-items:center;opacity:.85}
+
+/* 舞台 */
+.stage{position:relative;flex:1 1 0;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:var(--glow);padding-bottom:4px}
+.dialbox{position:relative;height:min(290px,calc(100% - 66px));aspect-ratio:1;flex:none}
+.dialbox svg.ticks{position:absolute;inset:0;width:100%;height:100%}
+#glass{position:absolute;left:50%;top:50%;width:62%;height:76%;transform:translate(-50%,-52%);touch-action:none;cursor:grab}
+.center{position:absolute;inset:0;display:grid;place-items:center;text-align:center;pointer-events:none}
+.center .big{font-family:var(--num);font-weight:300;font-size:64px;line-height:1}
+.center .cap{font-size:11.5px;letter-spacing:.16em;color:#ffffff80;margin-top:8px}
+.read{text-align:center;margin-top:2px}
+.read .big{font-family:var(--num);font-weight:300;font-size:42px;letter-spacing:.01em;line-height:1}
+.read .big small{font-size:14px;margin-left:4px;opacity:.6}
+.read .cap{font-size:11.5px;letter-spacing:.14em;color:#ffffff80;margin-top:6px}
+
+/* 卡片 */
+.card{position:relative;flex:0 0 auto;max-height:54%;background:var(--cream);border-radius:34px 34px 0 0;display:flex;flex-direction:column;transition:max-height .45s cubic-bezier(.3,.8,.3,1)}
+.card.tall{max-height:70%}
+.scroll{overflow-y:auto;padding:22px 20px 10px;display:flex;flex-direction:column;gap:16px;scrollbar-width:none;overscroll-behavior:contain}
+.scroll::-webkit-scrollbar{display:none}
+.scroll>*,.sheet>*,.foot>*{flex-shrink:0}
+.foot{padding:10px 18px calc(18px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:10px}
+.head{text-align:center}
+.head h2{font-size:19px;font-weight:500;letter-spacing:.04em}
+.head p{font-size:13px;color:var(--mute);margin-top:3px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);text-align:center}
+.stats div{display:flex;flex-direction:column;gap:3px}
+.stats b{font-family:var(--num);font-weight:400;font-size:24px;line-height:1}
+.stats b sup{font-size:10px;margin-left:2px;color:var(--mute);vertical-align:super}
+.stats span{font-size:10.5px;color:var(--mute);letter-spacing:.06em}
+.map{width:100%;height:116px;display:block}
+.sec{font-size:11.5px;letter-spacing:.14em;color:var(--mute);display:flex;justify-content:space-between;align-items:center}
+.sec button{font-size:12px;letter-spacing:.04em;color:var(--ink);text-decoration:underline;text-underline-offset:3px}
+.tl{display:flex;flex-direction:column}
+.row{display:grid;grid-template-columns:44px 1fr auto;gap:10px;align-items:center;padding:11px 0;border-bottom:1px solid #00000012;font-size:14px}
+.row:last-child{border-bottom:0}
+.row .t{font-family:var(--num);font-size:14px;color:var(--mute)}
+.row .m{font-size:12px;color:var(--mute)}
+.row.new{animation:in .5s cubic-bezier(.3,.8,.3,1)}
+@keyframes in{from{opacity:0;transform:translateY(-6px)}}
+.chips{display:flex;gap:8px}
+.chips button{flex:1;height:40px;border-radius:99px;border:1px solid #1A191730;font-size:13.5px;display:flex;align-items:center;justify-content:center;gap:6px}
+.ctrl{display:flex;gap:8px;align-items:center}
+.seg{flex:1;display:flex;align-items:center;background:var(--coal);border-radius:99px;padding:5px;height:52px;position:relative}
+.seg button{position:relative;z-index:1;flex:1;height:42px;border-radius:99px;color:#ffffff70;font-family:var(--num);font-size:14px;transition:color .25s}
+.seg button[aria-pressed="true"]{color:var(--glow)}
+.seg .pill{position:absolute;top:5px;bottom:5px;border-radius:99px;background:#4A4743;transition:left .35s cubic-bezier(.3,1.2,.5,1),width .35s}
+.drop{width:52px;height:52px;border-radius:50%;border:1.5px solid var(--coal);display:grid;place-items:center;flex:none;position:relative;overflow:hidden}
+.go{height:52px;padding:0 24px;border-radius:99px;background:var(--coal);color:var(--glow);font-size:15px;letter-spacing:.1em;flex:none;transition:transform .15s}
+.go.wide{width:100%;flex:none}
+.go:active,.drop:active,.chips button:active{transform:scale(.96)}
+.go.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--coal)}
+.rip{position:absolute;left:50%;top:50%;width:8px;height:8px;margin:-4px;border-radius:50%;background:var(--coal);opacity:.3;animation:rip .7s ease-out forwards;pointer-events:none}
+@keyframes rip{to{transform:scale(12);opacity:0}}
+.say{display:flex;align-items:center;gap:8px;height:46px;padding:0 6px 0 16px;border-radius:99px;background:#fff9;border:1px solid #1A191718}
+.say input{flex:1;border:0;background:none;font-size:14px;outline:none;min-width:0}
+.say button{height:36px;padding:0 14px;border-radius:99px;background:var(--coal);color:var(--glow);font-size:13px}
+.ai{border-radius:20px;background:#fff;padding:14px 16px;display:flex;flex-direction:column;gap:6px;font-size:14px;animation:in .4s ease}
+.ai .lbl{font-size:11px;letter-spacing:.12em;color:var(--mute)}
+.ai .acts{display:flex;gap:8px;margin-top:4px}
+.ai .acts button{height:36px;padding:0 14px;border-radius:99px;font-size:13px;border:1px solid #1A191730}
+.ai .acts button.ok{background:var(--coal);color:var(--glow);border-color:var(--coal)}
+
+/* 今晚 */
+.nights{display:grid;grid-template-columns:repeat(21,1fr);gap:3px}
+.nights i{height:6px;border-radius:3px;background:#1A191718}
+.nights i.hit{background:var(--coal)}
+.nights i.miss{background:#1A191755}
+.nights i.now{background:var(--dawn)}
+.target{display:flex;align-items:center;justify-content:space-between;padding:6px 6px 6px 18px;border-radius:99px;background:#fff9}
+.target .l{font-size:13px;color:var(--mute)}
+.step{display:flex;align-items:center;gap:6px}
+.step button{width:38px;height:38px;border-radius:50%;border:1px solid #1A191730;font-size:18px;line-height:1}
+.step .n{font-size:24px;min-width:74px;text-align:center}
+.fc{display:grid;grid-template-columns:1fr 1fr;text-align:center}
+.fc b{display:block;font-family:var(--num);font-weight:400;font-size:22px}
+.fc span{font-size:10.5px;color:var(--mute);letter-spacing:.06em}
+.note{display:flex;gap:10px;align-items:flex-start;font-size:13.5px;line-height:1.65;color:#3A3835}
+.note svg{flex:none;margin-top:2px}
+.sleep-cd{font-family:var(--num);font-weight:300;font-size:46px;line-height:1}
+
+/* 回顾 */
+.chart{width:100%;height:168px;display:block}
+.grid21{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.grid21 i{aspect-ratio:1;border-radius:10px;background:#1A191710;display:grid;place-items:center;font-style:normal;font-size:11px;color:var(--mute);font-family:var(--num)}
+.grid21 i.hit{background:var(--coal);color:var(--glow)}
+.grid21 i.miss{background:#1A191733;color:var(--ink)}
+.grid21 i.now{outline:2px solid var(--dawn);outline-offset:1px}
+.reel{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;margin:0 -20px;padding:0 20px 2px;scrollbar-width:none}
+.reel::-webkit-scrollbar{display:none}
+.mc{flex:none;width:210px;min-height:150px;scroll-snap-align:start;border-radius:28px 40px 30px 36px;padding:18px;display:flex;flex-direction:column;justify-content:space-between;gap:10px}
+.mc .k{font-size:11.5px;opacity:.7;letter-spacing:.06em}
+.mc .n{font-size:40px;font-weight:300;line-height:1}
+.mc p{font-size:12.5px;line-height:1.55;opacity:.8}
+.mc.a{background:var(--coal);color:var(--glow)}
+.mc.b{background:#4A4743;color:var(--glow);border-radius:40px 26px 36px 30px}
+.mc.c{background:#A39E96;color:var(--ink);border-radius:32px 34px 44px 26px}
+.mc.d{background:#fff;color:var(--ink)}
+.fact{border-left:2px solid var(--dawn);padding:2px 0 2px 14px;font-size:13.5px;line-height:1.7;color:#3A3835}
+.fact b{display:block;font-size:11px;letter-spacing:.14em;color:var(--dawn);font-weight:500}
+
+/* 弹层 */
+.scrim{position:absolute;inset:0;z-index:20;background:#0008;opacity:0;pointer-events:none;transition:opacity .3s}
+.scrim.on{opacity:1;pointer-events:auto}
+.sheet{position:absolute;left:0;right:0;bottom:0;z-index:21;background:var(--cream);border-radius:32px 32px 0 0;padding:10px 20px calc(22px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:16px;max-height:86%;overflow-y:auto;transform:translateY(105%);transition:transform .42s cubic-bezier(.3,.9,.3,1)}
+.sheet.on{transform:none}
+.grab{width:38px;height:5px;border-radius:5px;background:#1A191726;align-self:center}
+.sheet h3{font-size:20px;font-weight:500;letter-spacing:.06em;text-align:center}
+.pills{display:flex;flex-wrap:wrap;gap:8px}
+.pills button{height:38px;padding:0 15px;border-radius:99px;border:1px solid #1A191730;font-size:13.5px;transition:all .2s}
+.pills button[aria-pressed="true"]{background:var(--coal);color:var(--glow);border-color:var(--coal)}
+.photo{position:relative;display:flex;align-items:center;justify-content:center;gap:8px;height:96px;border-radius:24px;border:1.5px dashed #1A191740;font-size:14px;cursor:pointer;overflow:hidden}
+.photo input{position:absolute;opacity:0;width:1px;height:1px}
+.photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.rng{display:flex;flex-direction:column;gap:8px}
+.rng .top{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:var(--mute)}
+.rng .top b{font-family:var(--num);font-weight:400;font-size:28px;color:var(--ink)}
+input[type=range]{width:100%;accent-color:var(--coal)}
+.list{background:#fff9;border-radius:22px;overflow:hidden}
+.li{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid #00000010;font-size:14.5px}
+.li:last-child{border-bottom:0}
+.li .r{color:var(--mute);font-size:13.5px;text-align:right}
+.sw{width:48px;height:29px;border-radius:99px;background:#1A191726;position:relative;flex:none;transition:background .25s}
+.sw::after{content:"";position:absolute;left:3px;top:3px;width:23px;height:23px;border-radius:50%;background:#fff;box-shadow:0 1px 4px #0003;transition:transform .3s cubic-bezier(.3,1.3,.5,1)}
+.sw[aria-checked="true"]{background:var(--coal)}
+.sw[aria-checked="true"]::after{transform:translateX(19px)}
+.small{font-size:12.5px;line-height:1.7;color:var(--mute)}
+
+/* 早晨 */
+.morning{position:absolute;inset:0;z-index:30;background:linear-gradient(180deg,#E9C9B2 0%,#ECE0D3 40%,var(--cream) 100%);display:flex;flex-direction:column;justify-content:center;gap:22px;padding:calc(30px + env(safe-area-inset-top)) 22px calc(30px + env(safe-area-inset-bottom));opacity:0;pointer-events:none;transition:opacity .6s}
+.morning.on{opacity:1;pointer-events:auto}
+.morning .t{font-family:var(--num);font-weight:300;font-size:15px;letter-spacing:.2em;color:#6B5A4E}
+.morning h3{font-size:30px;font-weight:500;letter-spacing:.06em;line-height:1.35}
+.who{display:flex;flex-direction:column;gap:10px}
+.who button{display:flex;justify-content:space-between;align-items:center;height:62px;padding:0 22px;border-radius:99px;background:#fff8;border:1px solid #fff;font-size:17px;font-weight:500}
+.who button span{font-size:12.5px;color:var(--mute);font-weight:400}
+.link{align-self:center;font-size:13px;color:#6B5A4E;text-decoration:underline;text-underline-offset:3px}
+.duel{position:relative;border-radius:32px;padding:24px;background:var(--coal);color:var(--glow);overflow:hidden;animation:in .5s ease}
+.duel.flop{background:#3A2D2A}
+.duel .brand{font-size:12px;letter-spacing:.3em;opacity:.6}
+.duel .score{display:grid;grid-template-columns:1fr auto 1fr;align-items:end;margin:24px 0 16px}
+.duel .side{display:flex;flex-direction:column;gap:2px}
+.duel .side.r{text-align:right}
+.duel .side span{font-size:12px;opacity:.6}
+.duel .side b{font-family:var(--num);font-weight:300;font-size:44px;line-height:1}
+.duel .vs{font-family:var(--num);font-size:14px;opacity:.4;padding:0 8px 8px}
+.duel h4{font-size:22px;font-weight:500;letter-spacing:.04em}
+.duel p{font-size:12.5px;opacity:.65;margin-top:6px;line-height:1.6}
+.duel .halo{position:absolute;right:-50px;top:-60px;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,#D98F6866,transparent 70%)}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+.toast.lg{background:#1D1C1Ad9}
+.toast{position:absolute;left:50%;top:calc(64px + env(safe-area-inset-top));z-index:40;transform:translate(-50%,-14px);padding:9px 16px;border-radius:99px;font-size:13px;color:var(--glow);opacity:0;transition:all .35s;pointer-events:none;white-space:nowrap}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+/* 随手拍 & 一键记录 */
+.acts{display:flex;gap:10px;align-items:flex-start}
+.snap{flex:1;height:56px;border-radius:99px;background:var(--coal);color:var(--glow);display:flex;align-items:center;justify-content:center;gap:10px;font-size:16px;letter-spacing:.1em;position:relative;overflow:hidden;transition:transform .15s}
+.snap::after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 30%,#ffffff26 50%,transparent 70%);transform:translateX(-100%);animation:sheen 3.4s 1.2s ease-in-out infinite}
+@keyframes sheen{55%,100%{transform:translateX(100%)}}
+.act{display:flex;flex-direction:column;align-items:center;gap:5px;font-size:11px;color:var(--mute);flex:none}
+.act .o{position:relative;width:56px;height:56px;border-radius:50%;border:1.5px solid var(--coal);display:grid;place-items:center;color:var(--ink);overflow:hidden;transition:transform .15s}
+.act:active .o,.snap:active{transform:scale(.94)}
+.mosaic{width:100%;height:150px;display:block}
+.row .nm{display:flex;align-items:center;gap:10px;min-width:0}
+.row .ic{width:30px;height:30px;border-radius:10px;background:#1A19170d;display:grid;place-items:center;flex:none}
+.row .th{width:30px;height:30px;border-radius:10px;object-fit:cover;flex:none}
+.shot{position:relative;border-radius:28px;overflow:hidden;aspect-ratio:4/3;background:var(--coal)}
+.shot img{width:100%;height:100%;object-fit:cover;display:block}
+.shot::after{content:"";position:absolute;left:0;right:0;bottom:0;height:55%;background:linear-gradient(transparent,#000b);pointer-events:none}
+.shot .scan{position:absolute;left:0;right:0;height:35%;background:linear-gradient(180deg,transparent,#ffffff50,transparent);animation:scan 1s ease-in-out infinite;z-index:1}
+@keyframes scan{from{top:-35%}to{top:100%}}
+.shot .tag{position:absolute;left:18px;right:18px;bottom:16px;z-index:2;color:#fff;display:flex;flex-direction:column;gap:2px}
+.shot .tag b{font-size:24px;font-weight:500;letter-spacing:.04em;animation:in .4s ease}
+.shot .tag span{font-family:var(--num);font-size:15px;opacity:.85}
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.tiles.two{grid-template-columns:1fr 1fr}
+.tiles button,.tiles label{height:104px;border-radius:26px;background:#fff9;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;font-size:14px;cursor:pointer;text-align:center}
+.tiles .dark{background:var(--coal);color:var(--glow)}
+.big-pills button{height:46px;padding:0 20px;font-size:14.5px;flex:1}
+.toast.act-toast{pointer-events:auto;display:flex;align-items:center;gap:8px;padding:6px 6px 6px 16px}
+.toast button{height:30px;padding:0 12px;border-radius:99px;background:#ffffff24;color:var(--glow);font-size:12.5px;white-space:nowrap}
+.hint{position:absolute;top:2px;left:50%;transform:translateX(-50%);z-index:3;font-size:11.5px;padding:6px 12px;border-radius:99px;color:var(--glow);white-space:nowrap;transition:opacity .8s;pointer-events:none}
+/* 自动演示 */
+#ring{position:absolute;z-index:35;pointer-events:none;border-radius:20px;box-shadow:0 0 0 2px #D98F68,0 0 0 8px #D98F6830,0 0 34px #D98F6866;opacity:0;transition:left .5s cubic-bezier(.3,.9,.3,1),top .5s cubic-bezier(.3,.9,.3,1),width .5s,height .5s,opacity .3s}
+#ring.on{opacity:1}
+#finger{position:absolute;z-index:36;width:36px;height:36px;margin:-18px 0 0 -18px;border-radius:50%;background:#ffffff4d;border:1.5px solid #fff;box-shadow:0 6px 18px #0006;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);opacity:0;pointer-events:none;transition:left .6s cubic-bezier(.3,.9,.3,1),top .6s cubic-bezier(.3,.9,.3,1),opacity .3s,transform .15s}
+#finger.on{opacity:1}
+#finger.press{transform:scale(.7)}
+.aside{max-width:280px}
+.demo-card{padding:18px;border-radius:26px;background:#ffffffa6;border:1px solid #fff;display:flex;flex-direction:column;gap:9px;box-shadow:0 18px 40px -24px #0006}
+.dc-top{display:flex;justify-content:space-between;align-items:center;font-size:11.5px;letter-spacing:.12em;color:var(--mute)}
+.dc-status{display:inline-flex;align-items:center;gap:6px}
+.dc-status i{width:7px;height:7px;border-radius:50%;background:#B9B3AA}
+.demo-card.run .dc-status i{background:#5FBF7F;box-shadow:0 0 8px #5FBF7F}
+.demo-card.manual .dc-status i{background:var(--dawn)}
+.demo-card h3{font-size:20px;font-weight:500;letter-spacing:.06em;color:var(--ink)}
+.demo-card p{font-size:13px;line-height:1.75;color:#5F5A53}
+.dc-note{min-height:22px;font-size:13.5px!important;color:var(--ink)!important;font-weight:500}
+.dc-bar{height:3px;border-radius:3px;background:#1A191714;overflow:hidden}
+.dc-bar i{display:block;height:100%;width:0;background:var(--coal);transition:width .5s}
+.dc-btns{display:flex;gap:8px}
+.dc-btns button{flex:1;height:42px;border-radius:99px;background:var(--coal);color:var(--glow);font-size:13.5px;letter-spacing:.06em}
+.dc-btns button.ghost{background:transparent;color:var(--ink);border:1px solid #1A191733}
+.dc-refs{list-style:none;display:flex;flex-direction:column;gap:6px;border-top:1px solid #1A191714;padding-top:10px}
+.dc-refs:empty{display:none}
+.dc-refs li{font-size:11.5px;line-height:1.55;color:#5F5A53;padding-left:12px;position:relative}
+.dc-refs li::before{content:"";position:absolute;left:0;top:7px;width:5px;height:5px;border-radius:50%;background:var(--dawn)}
+.li.me{background:#1A19170c}
+.dc-tip{font-size:11.5px!important;color:var(--mute)!important}
+.demo-strip{position:absolute;top:2px;left:50%;transform:translateX(-50%);z-index:4;width:min(92%,360px);display:flex;align-items:center;gap:10px;padding:7px 7px 7px 14px;border-radius:18px;color:var(--glow);font-size:12px;line-height:1.45}
+.demo-strip b{font-weight:500;white-space:nowrap}
+.demo-strip span{flex:1;min-width:0;opacity:.8;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.demo-strip button{flex:none;height:28px;padding:0 10px;border-radius:99px;background:#ffffff26;color:var(--glow);font-size:11.5px}
+.demo-pill{position:absolute;left:16px;bottom:10px;font-size:11.5px;padding:7px 12px;border-radius:99px;color:var(--glow)}
+@media (min-width:601px){#demoStrip,#demoPill{display:none!important}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="aside">
+  <span class="tag">手机网页版 · 只有自动演示用虚拟数据</span>
+  <h1>自然急<small>PEECLOCK</small></h1>
+  <p>白天 3 秒记一笔吃、喝、动和去了一趟。睡前倒一小杯水，看明早身体能不能比闹钟先叫醒你。</p>
+  <div class="demo-card demo-ctl" id="demoCard">
+    <div class="dc-top"><span class="dc-status"><i></i><span id="dcStatus">自动演示</span></span><span class="n" id="dcProg">共 4 章</span></div>
+    <h3 id="dcTitle">一杯水，一个闹钟</h3>
+    <p id="dcBody">点下面开始，手机会自己演一遍：记一杯水、随手拍、睡前倒水、早晨对决卡。</p>
+    <p class="dc-note" id="dcNote"></p>
+    <ul class="dc-refs" id="dcRefs"></ul>
+    <div class="dc-bar"><i id="dcBar"></i></div>
+    <div class="dc-btns"><button id="dcStart">开始自动演示</button><button class="ghost" id="dcStop" hidden>停止</button></div>
+    <p class="dc-tip">演示用的是虚拟数据，结束后自动换回你的真实记录。演示中点一下手机就能接手，6 秒不动会接着演；电脑上 30 秒没人碰也会自己开始。</p>
+  </div>
+</div>
+
+<div class="app" id="app">
+  <div class="bar">
+    <span class="word" aria-label="自然急"><svg width="20" height="24" viewBox="0 0 24 28" fill="none" stroke="#F3EFE8" stroke-width="1.6"><path d="M12 1.5S3 11.5 3 17.5a9 9 0 0 0 18 0C21 11.5 12 1.5 12 1.5z"/><path d="M7 18.5q5 3 10 0" stroke-linecap="round"/></svg></span>
+    <div class="nav lg" role="tablist" id="nav">
+      <span class="pill" id="navPill"></span>
+      <button role="tab" data-v="today" aria-selected="true">今天</button>
+      <button role="tab" data-v="tonight" aria-selected="false">今晚</button>
+      <button role="tab" data-v="review" aria-selected="false">回顾</button>
+    </div>
+    <button class="round lg" id="meBtn" aria-label="设置"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6" stroke-linecap="round"/></svg></button>
+  </div>
+
+  <div class="stage" id="stage">
+    <div class="dialbox" id="dialbox">
+      <svg class="ticks" id="ticks" viewBox="0 0 290 290" aria-hidden="true"></svg>
+      <canvas id="glass" aria-label="水杯，可拖动" role="img"></canvas>
+      <div class="center" id="centerNum" hidden><div><div class="big" id="cBig">0/0</div><div class="cap" id="cCap">身体命中 / 记录夜数</div></div></div>
+    </div>
+    <div class="read" id="read"><div class="big" id="big">1,750<small>ml</small></div><div class="cap" id="cap">今天喝的水 · 目标 2,000</div></div>
+    <div class="demo-strip lg demo-ctl" id="demoStrip" hidden><b id="dsTitle"></b><span id="dsNote"></span><button id="dsStop">停止</button></div>
+    <button class="demo-pill lg demo-ctl" id="demoPill">自动演示</button>
+    <div class="hint lg" id="hint">晃一晃手机，或者拖一下杯子</div>
+  </div>
+
+  <div class="card" id="card">
+    <!-- 今天 -->
+    <div class="scroll" data-view="today">
+      <div class="head"><h2 id="dateH"></h2><p id="nextP"></p></div>
+      <div class="stats">
+        <div><b class="n" id="sKcal">0</b><span>摄入 · 估算</span></div>
+        <div><b class="n" id="sMove">0</b><span>运动</span></div>
+        <div><b class="n" id="sPee">0</b><span>去了一趟</span></div>
+      </div>
+      <div class="sec"><span>今天吃了什么</span><span id="mosaicCap">点「随手拍」加一张</span></div>
+      <svg class="mosaic" id="map" viewBox="0 0 350 150" role="img" aria-label="今天吃喝的照片拼图，块越大热量越多"></svg>
+      <div class="sec"><span>今天的记录</span><button id="moreBtn">全部</button></div>
+      <div class="tl" id="tl"></div>
+    </div>
+
+    <!-- 今晚 -->
+    <div class="scroll" data-view="tonight" hidden>
+      <div class="head"><h2 id="tonH">今晚</h2><p id="tonP">21 夜校准计划</p></div>
+      <div class="nights" id="nights"></div>
+      <div id="preSleep" style="display:flex;flex-direction:column;gap:16px">
+        <div class="target"><span class="l">想几点醒</span><div class="step"><button id="tMinus" aria-label="提前 10 分钟">−</button><span class="n" id="tVal">07:00</span><button id="tPlus" aria-label="推后 10 分钟">+</button></div></div>
+        <div class="fc"><div><b id="fcWake">06:33–07:09</b><span>预计醒来</span></div><div><b id="fcRec">150–300</b><span>建议 ml</span></div></div>
+        <div class="note"><svg width="22" height="26" viewBox="0 0 24 28" aria-hidden="true"><path d="M12 1.5S3 11.5 3 17.5a9 9 0 0 0 18 0C21 11.5 12 1.5 12 1.5z" fill="#1D1C1A"/><path d="M8 17q1.6-1.4 3.2 0M13 17q1.6-1.4 3.2 0" stroke="#ECE7DF" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg><span id="noteN"></span></div>
+        <p class="small" id="calib"></p>
+      </div>
+      <div id="asleep" hidden style="display:flex;flex-direction:column;gap:14px;align-items:center;text-align:center">
+        <span class="small">距离预计醒来</span>
+        <span class="sleep-cd" id="cd">7 时 24 分</span>
+        <span class="small" id="cdSub"></span>
+      </div>
+      <p class="small" id="nightOff" hidden>夜间挑战已关闭。可以在右上角设置里打开。</p>
+    </div>
+
+    <!-- 回顾 -->
+    <div class="scroll" data-view="review" hidden>
+      <div class="head"><h2 id="revH">校准中</h2><p id="revP">记满 3 晚就有称号</p></div>
+      <div class="sec"><span>每夜误差 · 分钟</span><span>±30 内算命中</span></div>
+      <svg class="chart" id="chart" viewBox="0 0 350 168" role="img" aria-label="最近几夜身体叫醒时间与目标的误差"></svg>
+      <div class="sec"><span>21 夜校准</span><span>第 21 夜领证书</span></div>
+      <div class="grid21" id="grid21"></div>
+      <div class="sec"><span>排行榜</span><span id="boardCap">按命中次数</span></div>
+      <div class="list" id="board"></div>
+      <div class="sec"><span>我的数字</span><span>左右滑</span></div>
+      <div class="reel">
+        <div class="mc a"><span class="k">身体替你叫醒了</span><span class="n" id="rm1">0<small style="font-size:16px"> 次</small></span><p id="rm1p">早上记得回答「谁叫醒了你」。</p></div>
+        <div class="mc b"><span class="k">平均误差</span><span class="n" id="rm2">—</span><p>和你想醒的时间差多少。</p></div>
+        <div class="mc c"><span class="k">最能让你跑厕所的</span><span class="n" id="rm3" style="font-family:var(--body);font-size:28px;font-weight:500">—</span><p id="rm3p">多记几次喝的就知道了。</p></div>
+        <div class="mc d"><span class="k">你的回声时间</span><span class="n" id="rm4">—</span><p>喝水后平均多久想去，用今天的记录算。</p></div>
+      </div>
+      <div class="fact"><b>冷知识</b>咖啡的利尿作用比你以为的小。一项汇总 16 项研究的分析发现，静息状态下效应整体偏小。</div>
+    </div>
+
+    <div class="foot" id="foot"></div>
+  </div>
+
+  <input type="file" id="snapIn" accept="image/*" capture="environment" hidden>
+  <div class="scrim" id="scrim"></div>
+  <div class="sheet" id="sheet" role="dialog" aria-modal="true"></div>
+
+  <div class="morning" id="morning" role="dialog" aria-label="早晨一问">
+    <div id="ask" style="display:flex;flex-direction:column;gap:20px">
+      <label class="t" style="display:flex;align-items:center;gap:12px">醒来时间 <input type="time" id="wakeIn" class="n" style="font-size:22px;border:0;background:#fff9;border-radius:14px;padding:6px 12px;color:var(--ink)"></label>
+      <h3>早上好。<br>谁叫醒了你？</h3>
+      <div class="who">
+        <button data-who="body">身体 <span>想去厕所醒的</span></button>
+        <button data-who="alarm">闹钟 <span>闹钟先响了</span></button>
+        <button data-who="self">我自己 <span>自然醒，不急</span></button>
+      </div>
+      <button class="link" data-who="flop">半夜就被叫醒了</button>
+    </div>
+    <div id="result" hidden style="display:flex;flex-direction:column;gap:14px"></div>
+  </div>
+
+  <div id="ring"></div><div id="finger"></div>
+  <div class="toast lg" id="toast" role="status" aria-live="polite"></div>
+</div>
+
+<script>
+(() => {
+'use strict';
+const $ = s => document.querySelector(s), $$ = s => Array.from(document.querySelectorAll(s));
+const pad = n => String(n).padStart(2, '0');
+const hm = m => { m = ((Math.round(m) % 1440) + 1440) % 1440; return pad(Math.floor(m / 60)) + ':' + pad(m % 60); };
+const dur = m => { m = Math.round(m); const h = Math.floor(m / 60), r = m % 60; return h ? `${h} 小时 ${r} 分` : `${r} 分钟`; };
+const fmt = n => Math.round(n).toLocaleString('en-US');
+const buzz = p => { try { navigator.vibrate && navigator.vibrate(p); } catch (_) {} };
+
+// ================= 数据 =================
+const GOAL = 2000, KGOAL = 1900, CAP = 800, BED = 23 * 60 + 30;
+const nowMin = () => { const d = new Date(); return d.getHours() * 60 + d.getMinutes(); };
+const dayKey = () => new Date().toLocaleDateString('sv');
+const LS = 'zrj.v1';
+const saved = (() => { try { return JSON.parse(localStorage.getItem(LS)) || {}; } catch (_) { return {}; } })();
+const newId = () => Array.from(crypto.getRandomValues(new Uint8Array(8)), b => b.toString(16).padStart(2, '0')).join('');
+const S = {
+  view: 'today', now: nowMin(), cup: 350, day: dayKey(),
+  tonight: saved.tonight ?? 250, target: saved.target ?? 420, armed: !!saved.armed, sleepAt: saved.sleepAt ?? null, sleepMl: saved.sleepMl ?? null, armedTs: saved.armedTs || 0,
+  nightOn: saved.nightOn !== false, showAll: false, uid: saved.uid || newId(), nick: saved.nick || '',
+  log: saved.day === dayKey() ? (saved.log || []) : [],
+  model: null, adj: 0, note: '', me: null, board: null, demo: false
+};
+function persist() {
+  if (S.demo) return;
+  try { localStorage.setItem(LS, JSON.stringify({ day: S.day, log: S.log, tonight: S.tonight, target: S.target, armed: S.armed, sleepAt: S.sleepAt, sleepMl: S.sleepMl, armedTs: S.armedTs, nightOn: S.nightOn, uid: S.uid, nick: S.nick })); }
+  catch (_) { toast('手机存储满了，旧照片可能存不下'); }
+}
+// 跨零点换日：清空当天记录，别把昨天和今天混在一起
+function checkDay() {
+  const dk = dayKey(); if (dk === S.day) return;
+  S.day = dk; S.log = []; shownWater = 0;
+  const d = new Date(); $('#dateH').textContent = `${d.getMonth() + 1} 月 ${d.getDate()} 日 · 周${'日一二三四五六'[d.getDay()]}`;
+  if (S.demo) return;
+  persist(); renderToday();
+  if (S.view === 'tonight') renderTonight(); else if (S.view === 'review') renderReview();
+}
+setInterval(() => {
+  if (S.demo) return;
+  S.now = nowMin(); checkDay();
+  // 跨分钟要跟着走：今晚的倒计时、今天的「下一次想去」
+  if (S.view === 'tonight') renderTonight(); else if (S.view === 'today') renderToday();
+}, 30000);
+// 演示模式专用的虚拟数据
+const SAMPLE_LOG = [
+  { t: 460, k: 'drink', name: '温水', ml: 250 }, { t: 490, k: 'eat', name: '燕麦酸奶碗', kcal: 380 }, { t: 515, k: 'pee' },
+  { t: 570, k: 'drink', name: '冰美式', ml: 500, caf: true, kcal: 15 }, { t: 642, k: 'pee' }, { t: 740, k: 'eat', name: '番茄牛腩饭', kcal: 720 },
+  { t: 760, k: 'drink', name: '水', ml: 300 }, { t: 845, k: 'pee' }, { t: 930, k: 'drink', name: '生椰拿铁', ml: 450, caf: true, kcal: 210 },
+  { t: 1030, k: 'pee' }, { t: 1050, k: 'eat', name: '苹果', kcal: 90 }, { t: 1095, k: 'move', name: '快走', min: 32, kcal: 160 }, { t: 1130, k: 'drink', name: '水', ml: 250 }
+];
+const SAMPLE_ME = { nights: [-41, -12, 6, 'alarm', -8, 22, -5, 'flop', -9, 4, 'alarm'].map(v => typeof v === 'number' ? { who: 'body', err: v } : { who: v, err: null }), stats: { n: 11, hits: 7, body: 8, flops: 1, avgErr: 13, title: '瑞士机芯', streak: 2 } };
+const SAMPLE_BOARD = { list: [{ nick: '演示 · 早起的鸟', hits: 15, n: 19, avgErr: 9, title: '原子钟级' }, { nick: '演示 · 你', hits: 7, n: 11, avgErr: 13, title: '瑞士机芯', me: true }, { nick: '演示 · 冰美式选手', hits: 4, n: 9, avgErr: 26, title: '老座钟' }] };
+const water = () => S.log.reduce((s, e) => s + (e.k === 'drink' ? e.ml : 0), 0);
+const kcalIn = () => S.log.reduce((s, e) => s + ((e.k === 'eat' || e.k === 'drink') ? (e.kcal || 0) : 0), 0);
+// 个人模型（服务器按你的反馈重新拟合）：首段睡眠 ≈ a − b × 睡前饮水
+const M = () => S.model || { a: 460, b: .075, shift: 0 };
+const sleepStart = () => (S.armed && S.sleepAt != null) ? S.sleepAt : (S.now >= 20 * 60 || S.now < 180) ? S.now : BED;
+const wakeAt = ml => sleepStart() + M().a - ml * M().b + (S.adj || 0);
+const recFor = tg => { let gap = (tg - 5) - sleepStart() - (S.adj || 0); if (gap < 0) gap += 1440; const x = Math.max(100, Math.min(500, (M().a - gap) / M().b + (M().shift || 0))); return [Math.max(50, Math.round((x - 75) / 50) * 50), Math.min(CAP, Math.round((x + 75) / 50) * 50)]; };
+const nightClass = g => g.who === 'body' ? (Math.abs(g.err) <= 30 ? 'hit' : 'miss') : g.who === 'flop' ? 'miss' : 'skip';
+const myNights = () => (S.demo ? SAMPLE_ME : S.me || { nights: [], stats: { n: 0, hits: 0, body: 0, flops: 0, avgErr: null, title: '校准中', streak: 0 } });
+const esc = v => String(v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+async function api(path, body) {
+  const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 30000);
+  try {
+    const r = await fetch('/api/' + path, { method: body ? 'POST' : 'GET', headers: body ? { 'Content-Type': 'application/json' } : {}, body: body ? JSON.stringify(body) : undefined, signal: ctl.signal });
+    if (!r.ok) { const e = new Error('http ' + r.status); e.status = r.status; throw e; }
+    return await r.json();
+  } finally { clearTimeout(t); }
+}
+
+// ================= 液态玻璃杯（Canvas） =================
+const cv = $('#glass'), ctx = cv.getContext('2d');
+const G = {
+  w: 0, h: 0, dpr: 1, level: .8, levelT: .8,
+  th: 0, vth: 0, thT: 0, // 液面相对屏幕的倾角（弧度）
+  N: 56, hgt: null, vel: null, bubbles: [], t: 0, visible: true,
+};
+G.hgt = new Float32Array(G.N + 1); G.vel = new Float32Array(G.N + 1);
+function sizeGlass() {
+  const r = cv.getBoundingClientRect(); G.dpr = Math.min(3, window.devicePixelRatio || 1);
+  G.w = r.width; G.h = r.height; cv.width = r.width * G.dpr; cv.height = r.height * G.dpr;
+}
+function geo() {
+  const w = G.w, h = G.h, cx = w / 2;
+  const top = h * .1, bot = h * .93, wT = w * .74, wB = w * .6, wall = Math.max(4, w * .035), base = h * .085;
+  const half = y => (wB + (wT - wB) * (bot - y) / (bot - top)) / 2;
+  return { cx, top, bot, wT, wB, wall, base, ib: bot - base, half, ih: y => half(y) - wall };
+}
+function bodyPath(g, inset) {
+  const { cx, top, bot } = g; const h = y => g.half(y) - inset, b = bot - inset * .4, r = 10;
+  ctx.beginPath();
+  ctx.moveTo(cx - h(top), top);
+  ctx.lineTo(cx - h(b - r), b - r);
+  ctx.quadraticCurveTo(cx - h(b), b, cx - h(b) + r, b);
+  ctx.lineTo(cx + h(b) - r, b);
+  ctx.quadraticCurveTo(cx + h(b), b, cx + h(b - r), b - r);
+  ctx.lineTo(cx + h(top), top);
+}
+function cavityPath(g) {
+  const { cx, top, ib } = g, r = 9;
+  ctx.beginPath();
+  ctx.moveTo(cx - g.ih(top), top);
+  ctx.lineTo(cx - g.ih(ib - r), ib - r);
+  ctx.quadraticCurveTo(cx - g.ih(ib), ib, cx - g.ih(ib) + r, ib);
+  ctx.lineTo(cx + g.ih(ib) - r, ib);
+  ctx.quadraticCurveTo(cx + g.ih(ib), ib, cx + g.ih(ib - r), ib - r);
+  ctx.lineTo(cx + g.ih(top), top);
+  ctx.closePath();
+}
+function surfY(g, x, i) {
+  const fillTop = g.top + (g.ib - g.top) * .06;
+  const y0 = g.ib - G.level * (g.ib - fillTop);
+  return y0 + Math.tan(G.th) * (x - g.cx) + (i == null ? 0 : G.hgt[i]);
+}
+function impulse(pos, amt, spread = 6) {
+  const c = Math.round(pos * G.N);
+  for (let i = 0; i <= G.N; i++) { const d = Math.abs(i - c); if (d < spread) G.vel[i] += amt * (1 - d / spread); }
+}
+function burst(n) {
+  const g = geo();
+  for (let k = 0; k < n; k++) G.bubbles.push({ x: g.cx + (Math.random() - .5) * g.ih(g.ib) * 1.4, y: g.ib - 4 - Math.random() * 20, r: .8 + Math.random() * 2.6, vy: .35 + Math.random() * .7, ph: Math.random() * 6 });
+}
+function step() {
+  // 倾角：阻尼弹簧，液面会晃过头再回来
+  const prev = G.th;
+  G.vth += (G.thT - G.th) * .06; G.vth *= .86; G.th += G.vth;
+  const dth = G.th - prev;
+  // 倾角变化在液面两端激起反向的波
+  for (let i = 0; i <= G.N; i++) G.vel[i] += dth * (i / G.N - .5) * -38;
+  // 一维浅水波
+  for (let it = 0; it < 2; it++) {
+    for (let i = 0; i <= G.N; i++) {
+      const l = G.hgt[Math.max(0, i - 1)], r = G.hgt[Math.min(G.N, i + 1)];
+      G.vel[i] += (l + r - 2 * G.hgt[i]) * .22 - G.hgt[i] * .012;
+      G.vel[i] *= .975;
+    }
+    for (let i = 0; i <= G.N; i++) G.hgt[i] += G.vel[i] * .5;
+  }
+  // 平均值归零，保持体积
+  let m = 0; for (let i = 0; i <= G.N; i++) m += G.hgt[i]; m /= (G.N + 1);
+  for (let i = 0; i <= G.N; i++) G.hgt[i] -= m;
+  G.level += (G.levelT - G.level) * .06;
+  G.t += 1 / 60;
+}
+function draw() {
+  const g = geo(), { cx, top, bot, ib } = g, W = G.w, H = G.h;
+  ctx.setTransform(G.dpr, 0, 0, G.dpr, 0, 0);
+  ctx.clearRect(0, 0, W, H);
+
+  // 地面投影
+  const sh = ctx.createRadialGradient(cx, bot + 4, 2, cx, bot + 4, g.wB * .75);
+  sh.addColorStop(0, '#000a'); sh.addColorStop(1, '#0000');
+  ctx.fillStyle = sh; ctx.beginPath(); ctx.ellipse(cx, bot + 4, g.wB * .75, 9, 0, 0, Math.PI * 2); ctx.fill();
+
+  // 杯身背面的折射底色
+  bodyPath(g, 0); ctx.closePath();
+  const back = ctx.createLinearGradient(cx - g.wT / 2, 0, cx + g.wT / 2, 0);
+  back.addColorStop(0, '#ffffff10'); back.addColorStop(.5, '#ffffff04'); back.addColorStop(1, '#ffffff0c');
+  ctx.fillStyle = back; ctx.fill();
+
+  // 液体
+  ctx.save(); cavityPath(g); ctx.clip();
+  const x0 = cx - g.ih(top) - 4, x1 = cx + g.ih(top) + 4;
+  const pts = [];
+  for (let i = 0; i <= G.N; i++) { const x = x0 + (x1 - x0) * i / G.N; pts.push([x, surfY(g, x, i)]); }
+  ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
+  for (let i = 1; i <= G.N; i++) { const [a, b] = pts[i - 1], [c, d] = pts[i]; ctx.quadraticCurveTo(a, b, (a + c) / 2, (b + d) / 2); }
+  ctx.lineTo(x1, ib + 10); ctx.lineTo(x0, ib + 10); ctx.closePath();
+  const yTop = Math.min(...pts.map(p => p[1]));
+  const lq = ctx.createLinearGradient(0, yTop, 0, ib);
+  lq.addColorStop(0, 'rgba(214,230,232,.92)'); lq.addColorStop(.45, 'rgba(158,190,196,.9)'); lq.addColorStop(1, 'rgba(88,122,130,.95)');
+  ctx.fillStyle = lq; ctx.fill();
+  // 侧壁折射暗边
+  const edge = ctx.createLinearGradient(x0, 0, x1, 0);
+  edge.addColorStop(0, '#0f2a3044'); edge.addColorStop(.18, '#0000'); edge.addColorStop(.82, '#0000'); edge.addColorStop(1, '#0f2a3055');
+  ctx.fillStyle = edge; ctx.fill();
+  // 底部焦散光斑
+  const ca = ctx.createRadialGradient(cx + Math.sin(G.t * .8) * 8 - G.th * 40, ib - 6, 2, cx, ib - 6, g.ih(ib) * 1.1);
+  ca.addColorStop(0, '#ffffff55'); ca.addColorStop(1, '#ffffff00');
+  ctx.fillStyle = ca; ctx.fillRect(x0, ib - 40, x1 - x0, 40);
+  // 液面：一条亮线 + 下方一层更浅的"看到的液面"
+  ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
+  for (let i = 1; i <= G.N; i++) { const [a, b] = pts[i - 1], [c, d] = pts[i]; ctx.quadraticCurveTo(a, b, (a + c) / 2, (b + d) / 2); }
+  ctx.lineWidth = 7; ctx.strokeStyle = 'rgba(236,246,247,.35)'; ctx.stroke();
+  ctx.lineWidth = 1.4; ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.stroke();
+  // 气泡
+  for (const b of G.bubbles) {
+    b.y -= b.vy; b.x += Math.sin(G.t * 3 + b.ph) * .25;
+    const sy = surfY(g, b.x, Math.max(0, Math.min(G.N, Math.round((b.x - x0) / (x1 - x0) * G.N))));
+    if (b.y < sy + 2) { b.dead = true; continue; }
+    ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,255,255,.18)'; ctx.fill();
+    ctx.lineWidth = .8; ctx.strokeStyle = 'rgba(255,255,255,.6)'; ctx.stroke();
+  }
+  G.bubbles = G.bubbles.filter(b => !b.dead);
+  if (G.level > .08 && Math.random() < .035) burst(1);
+  ctx.restore();
+
+  // 厚底：带一点液体的折射色
+  ctx.save(); bodyPath(g, 0); ctx.closePath(); ctx.clip();
+  const bs = ctx.createLinearGradient(0, ib, 0, bot);
+  bs.addColorStop(0, G.level > .03 ? 'rgba(150,185,190,.35)' : '#ffffff14'); bs.addColorStop(1, '#ffffff08');
+  ctx.fillStyle = bs; ctx.fillRect(cx - g.wT, ib, g.wT * 2, bot - ib);
+  ctx.restore();
+
+  // 杯壁：液态玻璃描边，带一点色散
+  bodyPath(g, 0);
+  const rimG = ctx.createLinearGradient(cx - g.wT / 2, top, cx + g.wT / 2, bot);
+  rimG.addColorStop(0, 'rgba(200,230,255,.75)'); rimG.addColorStop(.5, 'rgba(255,255,255,.25)'); rimG.addColorStop(1, 'rgba(255,205,225,.6)');
+  ctx.lineWidth = 1.6; ctx.strokeStyle = rimG; ctx.lineJoin = 'round'; ctx.stroke();
+  cavityPath(g); ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(255,255,255,.18)'; ctx.stroke();
+
+  // 随倾角移动的高光
+  const sx = -G.th * 26;
+  ctx.save(); bodyPath(g, 0); ctx.closePath(); ctx.clip();
+  const hl = ctx.createLinearGradient(0, top, 0, bot);
+  hl.addColorStop(0, 'rgba(255,255,255,.55)'); hl.addColorStop(.7, 'rgba(255,255,255,.08)'); hl.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.strokeStyle = hl; ctx.lineCap = 'round';
+  ctx.lineWidth = Math.max(3, G.w * .03);
+  ctx.beginPath(); ctx.moveTo(cx - g.half(top) + g.wall * 2 + sx, top + 10); ctx.lineTo(cx - g.half(ib) + g.wall * 2 + sx * .6, ib - 16); ctx.stroke();
+  ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(cx + g.half(top) - g.wall * 2.4 + sx, top + 16); ctx.lineTo(cx + g.half(top + 60) - g.wall * 2.4 + sx, top + 60); ctx.stroke();
+  ctx.restore();
+
+  // 杯口
+  ctx.beginPath(); ctx.ellipse(cx, top, g.wT / 2, 3.2, 0, 0, Math.PI * 2);
+  ctx.lineWidth = 1.2; ctx.strokeStyle = 'rgba(255,255,255,.45)'; ctx.stroke();
+  ctx.beginPath(); ctx.ellipse(cx, top, g.wT / 2, 3.2, 0, 0, Math.PI);
+  ctx.lineWidth = 1.8; ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.stroke();
+}
+function loop() {
+  if (G.visible && !document.hidden) { step(); draw(); }
+  requestAnimationFrame(loop);
+}
+// 睡过一觉回来，自动问「谁叫醒了你」（只挂一次；原来写在逐帧循环里会疯狂重复注册监听）
+let morningShown = false;
+function askIfMorning() {
+  S.now = nowMin();
+  if (S.demo || morningShown || !S.armed) return;
+  if (Date.now() - (S.armedTs || 0) > 3 * 3600e3 && S.now >= 240 && S.now <= 720) { morningShown = true; openMorning(); }
+}
+setInterval(askIfMorning, 60000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) askIfMorning(); });
+
+// ---- 倾斜输入：陀螺仪默认开启（iOS 需在第一次触摸时授权），没有权限时用拖动 ----
+let gyroOn = ('ontouchstart' in window) || matchMedia('(pointer:coarse)').matches;
+let gyroAttached = false, gotOrient = false, permAsked = false;
+function onOrient(e) {
+  if (e.gamma == null) return;
+  gotOrient = true;
+  const sOri = (screen.orientation && screen.orientation.angle) || window.orientation || 0;
+  let tilt = sOri === 90 ? e.beta : sOri === -90 || sOri === 270 ? -e.beta : e.gamma;
+  tilt = Math.max(-40, Math.min(40, tilt));
+  // 手机右倾时液面应该往上翘，这里取反
+  G.thT = -tilt * Math.PI / 180;
+}
+let lastShake = 0;
+function onMotion(e) {
+  const a = e.acceleration || {}; const mag = Math.hypot(a.x || 0, a.y || 0, a.z || 0);
+  if (mag > 9 && performance.now() - lastShake > 250) { lastShake = performance.now(); impulse(Math.random(), (Math.random() - .5) * 14, 14); burst(6); buzz(8); }
+}
+function attachGyro() {
+  if (gyroAttached) return; gyroAttached = true;
+  window.addEventListener('deviceorientation', onOrient);
+  window.addEventListener('devicemotion', onMotion);
+}
+function detachGyro() {
+  if (!gyroAttached) return; gyroAttached = false;
+  window.removeEventListener('deviceorientation', onOrient);
+  window.removeEventListener('devicemotion', onMotion);
+}
+async function enableGyro() {
+  try {
+    const DO = window.DeviceOrientationEvent, DM = window.DeviceMotionEvent;
+    if (!DO) throw new Error('none');
+    if (typeof DO.requestPermission === 'function') {
+      const r = await DO.requestPermission(); if (r !== 'granted') throw new Error('denied');
+      if (DM && typeof DM.requestPermission === 'function') { try { await DM.requestPermission(); } catch (_) {} }
+    }
+    attachGyro();
+    setTimeout(() => { if (!gotOrient) toast('没有收到传感器数据，可以左右拖动杯子'); }, 1500);
+  } catch (err) {
+    gyroOn = false;
+    toast(err.message === 'denied' ? '没有获得权限，可以左右拖动杯子' : '这里用不了重力感应，可以左右拖动杯子');
+  }
+}
+// 默认开启：安卓/电脑直接挂上；iOS 需要用户手势才能授权，第一次触摸时自动申请
+if (gyroOn) {
+  if (typeof (window.DeviceOrientationEvent || {}).requestPermission === 'function') {
+    const ask = () => { if (permAsked) return; permAsked = true; enableGyro(); };
+    ['pointerdown', 'touchstart', 'click'].forEach(t => document.addEventListener(t, ask, { once: true, passive: true }));
+  } else enableGyro();
+}
+
+// 拖动：左右=倾斜；今晚模式下上下=调整水量；轻点=戳一下液面
+let drag = null;
+cv.addEventListener('pointerdown', e => { drag = { x: e.clientX, y: e.clientY, ml: S.tonight, moved: false, th: G.thT }; cv.setPointerCapture(e.pointerId); cv.style.cursor = 'grabbing'; });
+cv.addEventListener('pointermove', e => {
+  if (!drag) return;
+  const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+  if (Math.abs(dx) + Math.abs(dy) > 4) drag.moved = true;
+  if (!gyroOn) G.thT = Math.max(-.6, Math.min(.6, drag.th + dx / 160));
+  if (S.view === 'tonight' && !S.armed && S.nightOn && Math.abs(dy) > Math.abs(dx) * .7) setTonight(drag.ml - dy * 4);
+});
+const endDrag = e => {
+  if (!drag) return;
+  if (!drag.moved) { const r = cv.getBoundingClientRect(); impulse((e.clientX - r.left) / r.width, 7, 8); burst(3); buzz(6); }
+  if (!gyroOn) G.thT = 0;
+  drag = null; cv.style.cursor = 'grab';
+};
+cv.addEventListener('pointerup', endDrag); cv.addEventListener('pointercancel', endDrag);
+
+// ================= 表盘刻度 =================
+function ticks(p, accent) {
+  const C = 145, R = 138, N = 72, on = Math.round(Math.max(0, Math.min(1, p)) * N);
+  let s = '';
+  for (let i = 0; i < N; i++) {
+    const a = (i / N) * Math.PI * 2 - Math.PI / 2, act = i < on;
+    const near = act ? Math.max(0, 8 - (on - 1 - i)) : 0;
+    const len = act ? 9 + near * 1.7 : 7, r1 = R - len;
+    s += `<line x1="${(C + r1 * Math.cos(a)).toFixed(1)}" y1="${(C + r1 * Math.sin(a)).toFixed(1)}" x2="${(C + R * Math.cos(a)).toFixed(1)}" y2="${(C + R * Math.sin(a)).toFixed(1)}" stroke="${act ? (near > 6 && accent ? accent : '#F3EFE8') : '#4A4743'}" stroke-width="${act ? 1.4 + near * .13 : 1.1}" stroke-linecap="round" opacity="${act ? .5 + near * .06 : 1}"/>`;
+  }
+  $('#ticks').innerHTML = s;
+}
+function nightTicks() {
+  // 回顾页：21 段，代表 21 夜
+  const C = 145, R = 138; let s = '';
+  for (let n = 0; n < 21; n++) {
+    const ns = myNights().nights.slice(-21), st = ns[n] ? nightClass(ns[n]) : (n === ns.length ? 'now' : '');
+    for (let k = 0; k < 3; k++) {
+      const a = ((n * 3.43 + k * .95) / 72) * Math.PI * 2 - Math.PI / 2;
+      const len = st === 'hit' ? 18 : st === 'now' ? 14 : st === 'miss' ? 12 : 7;
+      const col = st === 'hit' ? '#F3EFE8' : st === 'now' ? '#D98F68' : st === 'miss' ? '#8B867E' : '#4A4743';
+      s += `<line x1="${C + (R - len) * Math.cos(a)}" y1="${C + (R - len) * Math.sin(a)}" x2="${C + R * Math.cos(a)}" y2="${C + R * Math.sin(a)}" stroke="${col}" stroke-width="${st === 'hit' ? 2 : 1.3}" stroke-linecap="round"/>`;
+    }
+  }
+  $('#ticks').innerHTML = s;
+}
+
+// ================= 示例照片（Canvas 绘制） =================
+function foodArt(kind, seed = 3) {
+  const c = document.createElement('canvas'); c.width = c.height = 360; const x = c.getContext('2d');
+  let s = seed; const rnd = () => (s = (s * 9301 + 49297) % 233280) / 233280;
+  const bg = { beef: '#3B2F2A', oat: '#CDBFAC', latte: '#2B2522', apple: '#D9D2C5', salad: '#E3DED2', ramen: '#26221F', bento: '#2A2724', snack: '#C9BFAE', tea: '#E3DED2', juice: '#E6D9C6', wine: '#2B2522', water: '#DCE6E4' }[kind] || '#444';
+  x.fillStyle = bg; x.fillRect(0, 0, 360, 360);
+  for (let i = 0; i < 46; i++) { x.strokeStyle = `rgba(255,255,255,${.015 + rnd() * .035})`; x.lineWidth = 1 + rnd() * 2; x.beginPath(); const y = rnd() * 360; x.moveTo(0, y); x.bezierCurveTo(120, y + rnd() * 20 - 10, 240, y + rnd() * 20 - 10, 360, y + rnd() * 10); x.stroke(); }
+  const disc = (r, col, cx = 180, cy = 180, sh = true) => { x.save(); if (sh) { x.shadowColor = 'rgba(0,0,0,.45)'; x.shadowBlur = 34; x.shadowOffsetY = 16; } x.fillStyle = col; x.beginPath(); x.arc(cx, cy, r, 0, 7); x.fill(); x.restore(); };
+  const blobs = (n, cx, cy, R, cols, a, b) => { for (let i = 0; i < n; i++) { const t = rnd() * 6.28, d = Math.sqrt(rnd()) * R; x.fillStyle = cols[i % cols.length]; x.beginPath(); x.ellipse(cx + Math.cos(t) * d, cy + Math.sin(t) * d, a + rnd() * (b - a), a + rnd() * (b - a), rnd() * 3, 0, 7); x.fill(); } };
+  const shine = (cx, cy, r) => { const g = x.createRadialGradient(cx - r * .4, cy - r * .5, 4, cx, cy, r); g.addColorStop(0, 'rgba(255,255,255,.28)'); g.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = g; x.beginPath(); x.arc(cx, cy, r, 0, 7); x.fill(); };
+  if (kind === 'beef') { disc(152, '#EFEAE1'); disc(120, '#E5DFD4', 180, 180, false); blobs(240, 140, 172, 70, ['#FBF9F4', '#F1EDE5'], 5, 9); blobs(28, 226, 196, 52, ['#8E3B24', '#A5452A', '#6E2C1B'], 12, 22); blobs(16, 226, 196, 56, ['#D9532E', '#E8743F'], 7, 13); blobs(18, 200, 170, 92, ['#4E8A3C', '#6BA34F'], 2, 4); }
+  if (kind === 'oat') { disc(146, '#F4EFE6'); disc(118, '#EFE6D6', 180, 180, false); blobs(120, 180, 180, 104, ['#D8B98A', '#C9A574', '#E3CBA0'], 3, 6); blobs(9, 150, 150, 46, ['#4A2B52', '#5E3966'], 9, 12); blobs(7, 220, 200, 40, ['#B23A48', '#C8485A'], 9, 12); blobs(5, 200, 130, 30, ['#F2DB8E'], 13, 16); }
+  if (kind === 'latte') { disc(150, '#E9E4DC'); disc(112, '#F6F3EE', 180, 180, false); disc(96, '#7A4F33', 180, 180, false); const g = x.createRadialGradient(180, 180, 10, 180, 180, 96); g.addColorStop(0, '#C79B6E'); g.addColorStop(.75, '#A9764C'); g.addColorStop(1, '#6D452C'); x.fillStyle = g; x.beginPath(); x.arc(180, 180, 92, 0, 7); x.fill(); x.fillStyle = 'rgba(250,244,234,.92)'; x.beginPath(); x.moveTo(180, 236); x.bezierCurveTo(110, 186, 128, 126, 180, 156); x.bezierCurveTo(232, 126, 250, 186, 180, 236); x.fill(); x.fillStyle = '#E9E4DC'; x.beginPath(); x.ellipse(306, 180, 30, 16, 0, 0, 7); x.fill(); }
+  if (kind === 'apple') { disc(118, '#B8282E'); const g = x.createRadialGradient(150, 140, 10, 180, 190, 120); g.addColorStop(0, '#E5524A'); g.addColorStop(1, '#8C1C22'); x.fillStyle = g; x.beginPath(); x.arc(180, 190, 116, 0, 7); x.fill(); shine(180, 190, 116); x.strokeStyle = '#5A3A22'; x.lineWidth = 7; x.lineCap = 'round'; x.beginPath(); x.moveTo(180, 84); x.quadraticCurveTo(186, 60, 198, 48); x.stroke(); x.fillStyle = '#5E9A3F'; x.beginPath(); x.ellipse(214, 66, 26, 11, -.5, 0, 7); x.fill(); }
+  if (kind === 'salad') { disc(152, '#FBFAF7'); blobs(70, 180, 180, 112, ['#5E9A3F', '#7DB352', '#3F7A2E', '#9CC46A'], 12, 24); blobs(10, 180, 180, 90, ['#E04A3A', '#F06A4E'], 12, 15); disc(26, '#F7F3E9', 140, 200, false); disc(12, '#F2B632', 140, 200, false); disc(26, '#F7F3E9', 226, 150, false); disc(12, '#F2B632', 226, 150, false); blobs(14, 190, 190, 80, ['#E8D2B8'], 10, 18); }
+  if (kind === 'ramen') { disc(156, '#141210'); disc(138, '#1E1A17', 180, 180, false); const g = x.createRadialGradient(170, 170, 10, 180, 180, 130); g.addColorStop(0, '#E9C27A'); g.addColorStop(1, '#B9813C'); x.fillStyle = g; x.beginPath(); x.arc(180, 180, 128, 0, 7); x.fill(); x.strokeStyle = 'rgba(250,226,150,.9)'; x.lineWidth = 4; for (let i = 0; i < 22; i++) { x.beginPath(); const y = 120 + i * 6; x.moveTo(90, y); x.bezierCurveTo(140, y - 14, 200, y + 14, 270, y - 4); x.stroke(); } x.fillStyle = '#E7B5A6'; x.beginPath(); x.ellipse(232, 230, 40, 30, .4, 0, 7); x.fill(); disc(28, '#F7F3E9', 132, 236, false); disc(14, '#F09A2A', 132, 236, false); blobs(30, 200, 140, 40, ['#4E8A3C', '#6BA34F'], 3, 5); }
+  if (kind === 'bento') { disc(154, '#141210'); disc(136, '#1E1A17', 180, 180, false); disc(66, '#F3EFE6', 138, 182, false); blobs(90, 138, 182, 54, ['#FBF9F4', '#EDE7DC'], 3, 6); blobs(24, 228, 148, 36, ['#B5401F', '#D9633A'], 9, 15); blobs(18, 228, 214, 30, ['#4E8A3C', '#6BA34F'], 5, 9); disc(26, '#F2B632', 234, 148, false); disc(9, '#E07A2A', 234, 148, false); blobs(12, 228, 214, 22, ['#E8C36A'], 4, 7); }
+  if (kind === 'snack') { disc(150, '#EFE7D8'); blobs(30, 180, 184, 100, ['#D9B36A', '#C79B4E', '#EDD9A8'], 13, 24); disc(44, '#8E5A2E', 148, 196, false); disc(36, '#A66B36', 220, 168, false); blobs(22, 180, 182, 76, ['#F2E6C8'], 4, 8); x.fillStyle = 'rgba(255,255,255,.35)'; for (let i = 0; i < 6; i++) { x.beginPath(); x.arc(126 + rnd() * 110, 136 + rnd() * 96, 1.6 + rnd() * 2.4, 0, 7); x.fill(); } }
+  if (kind === 'tea') { disc(150, '#E9E4DC'); disc(114, '#F6F3EE', 180, 180, false); const g = x.createRadialGradient(170, 168, 8, 180, 180, 98); g.addColorStop(0, '#BCD98E'); g.addColorStop(1, '#4E7A34'); x.fillStyle = g; x.beginPath(); x.arc(180, 180, 94, 0, 7); x.fill(); blobs(12, 180, 184, 62, ['#3F6A2A', '#2F5520'], 5, 9); x.fillStyle = '#E9E4DC'; x.beginPath(); x.ellipse(306, 180, 30, 16, 0, 0, 7); x.fill(); }
+  if (kind === 'juice') { disc(150, '#E9E4DC'); disc(114, '#F6F3EE', 180, 180, false); const g = x.createRadialGradient(170, 168, 8, 180, 180, 98); g.addColorStop(0, '#FFC066'); g.addColorStop(1, '#CF661A'); x.fillStyle = g; x.beginPath(); x.arc(180, 180, 94, 0, 7); x.fill(); disc(12, '#FFE0A8', 214, 156, false); x.fillStyle = '#F2B632'; x.beginPath(); x.arc(214, 156, 25, 0, 7); x.fill(); x.fillStyle = '#E9E4DC'; x.beginPath(); x.ellipse(306, 180, 30, 16, 0, 0, 7); x.fill(); }
+  if (kind === 'wine') { disc(150, '#E9E4DC'); disc(114, '#F6F3EE', 180, 180, false); const g = x.createRadialGradient(170, 170, 8, 180, 180, 98); g.addColorStop(0, '#A9344A'); g.addColorStop(1, '#3E0F1A'); x.fillStyle = g; x.beginPath(); x.arc(180, 180, 94, 0, 7); x.fill(); x.fillStyle = 'rgba(255,255,255,.16)'; x.beginPath(); x.ellipse(150, 150, 26, 11, -.6, 0, 7); x.fill(); }
+  if (kind === 'water') { disc(150, '#E9E4DC'); disc(114, '#F6F3EE', 180, 180, false); const g = x.createRadialGradient(170, 168, 8, 180, 180, 98); g.addColorStop(0, '#EDF8FB'); g.addColorStop(1, '#9FCCD6'); x.fillStyle = g; x.beginPath(); x.arc(180, 180, 94, 0, 7); x.fill(); for (let i = 0; i < 18; i++) { x.fillStyle = `rgba(255,255,255,${.25 + rnd() * .4})`; x.beginPath(); x.arc(112 + rnd() * 136, 116 + rnd() * 128, 1.4 + rnd() * 4, 0, 7); x.fill(); } }
+  shine(160, 150, 200);
+  return c.toDataURL('image/jpeg', .82);
+}
+const KB = {
+  beef: { n: '番茄牛腩饭', kcal: 720, t: 'eat' }, oat: { n: '燕麦酸奶碗', kcal: 380, t: 'eat' },
+  latte: { n: '拿铁', kcal: 190, t: 'drink', ml: 400, caf: true }, apple: { n: '苹果', kcal: 90, t: 'eat' },
+  salad: { n: '鸡胸肉沙拉', kcal: 420, t: 'eat' }, ramen: { n: '豚骨拉面', kcal: 680, t: 'eat' }
+};
+
+// ================= 今天 =================
+function blobMap() {
+  const items = S.log.filter(e => (e.k === 'eat' || e.k === 'drink') && (e.kcal || e.photo));
+  const svg = $('#map');
+  if (!items.length) { svg.innerHTML = '<text x="175" y="80" text-anchor="middle" font-size="13" fill="#8B867E">还没有吃喝，拍一张试试</text>'; return; }
+  const total = items.reduce((s, i) => s + (i.kcal || 0), 0) || 1;
+  const arr = items.map(i => ({ e: i, v: Math.max(i.kcal || 0, total * .08) * (i.photo && !i.illust ? 1.25 : 1) })).sort((a, b) => b.v - a.v);
+  const cells = [];
+  (function lay(a, x, y, w, h) {
+    if (a.length === 1) { cells.push({ ...a[0], x, y, w, h }); return; }
+    const tot = a.reduce((s, z) => s + z.v, 0); let acc = 0, k = 0;
+    while (k < a.length - 1 && acc + a[k].v <= tot / 2) acc += a[k++].v;
+    if (k === 0) { acc = a[0].v; k = 1; }
+    const f = acc / tot;
+    if (w >= h) { lay(a.slice(0, k), x, y, w * f, h); lay(a.slice(k), x + w * f, y, w * (1 - f), h); }
+    else { lay(a.slice(0, k), x, y, w, h * f); lay(a.slice(k), x, y + h * f, w, h * (1 - f)); }
+  })(arr, 0, 0, 350, 150);
+  const hash = s => { let h = 7; for (const c of s) h = (h * 31 + c.charCodeAt(0)) % 997; return h; };
+  const fills = ['#1D1C1A', '#33312E', '#4A4743', '#8B867E', '#A39E96'];
+  let defs = '<linearGradient id="fadeB" x1="0" y1="0" x2="0" y2="1"><stop offset=".35" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".7"/></linearGradient>', body = '';
+  cells.forEach((c, i) => {
+    const g = 3, x = c.x + g, y = c.y + g, w = c.w - 2 * g, h = c.h - 2 * g, e = c.e, s = hash(e.name), m = Math.min(w, h);
+    const r = k => m * (.24 + ((s >> k) % 5) * .05), [a, b, d, f] = [r(0), r(1), r(2), r(3)];
+    const path = `M${x + a} ${y}H${x + w - b}Q${x + w} ${y} ${x + w} ${y + b}V${y + h - d}Q${x + w} ${y + h} ${x + w - d} ${y + h}H${x + f}Q${x} ${y + h} ${x} ${y + h - f}V${y + a}Q${x} ${y} ${x + a} ${y}Z`;
+    defs += `<clipPath id="cp${i}"><path d="${path}"/></clipPath>`;
+    const big = w > 70 && h > 44, tx = x + 12, label = esc(w > 60 ? e.name : e.name.slice(0, 2));
+    if (e.photo) {
+      body += `<g clip-path="url(#cp${i})"><image href="${e.photo}" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="xMidYMid slice"/><rect x="${x}" y="${y}" width="${w}" height="${h}" fill="url(#fadeB)"/></g>`;
+    } else body += `<path d="${path}" fill="${fills[(s + i) % fills.length]}"/>`;
+    if (w > 38) body += `<text x="${tx}" y="${y + h - (big ? 24 : 10)}" font-size="${big ? 11.5 : 10}" fill="#fff" font-family="Noto Sans SC,sans-serif">${label}</text>`;
+    if (big && e.kcal) body += `<text x="${tx}" y="${y + h - 10}" font-size="10.5" fill="#fff" opacity=".75" font-family="Jost,sans-serif">${e.kcal} kcal</text>`;
+  });
+  svg.innerHTML = `<defs>${defs}</defs>${body}`;
+  const n = items.filter(i => i.photo && !i.illust).length;
+  $('#mosaicCap').textContent = n ? `${n} 张照片 · 共约 ${fmt(total)} kcal` : items.length ? `共约 ${fmt(total)} kcal · 拍一张更准` : '点「随手拍」加一张';
+}
+const icons = {
+  drink: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8B867E" stroke-width="1.8" stroke-linejoin="round"><path d="M6 3h12l-1.6 17a1.5 1.5 0 0 1-1.5 1.3H9.1a1.5 1.5 0 0 1-1.5-1.3z"/></svg>',
+  eat: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1A1917" stroke-width="1.8"><path d="M3 12h18a9 9 0 0 1-18 0z"/></svg>',
+  move: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1A1917" stroke-width="1.8" stroke-linecap="round"><circle cx="14" cy="4.5" r="1.8"/><path d="M8 21l3-6 3 2 1 4M7 11l3-3 3 1 2 3 3 1"/></svg>',
+  pee: '<svg width="13" height="14" viewBox="0 0 24 26" fill="#1A1917"><path d="M12 1.5S3.5 11 3.5 16.5a8.5 8.5 0 0 0 17 0C20.5 11 12 1.5 12 1.5z"/></svg>'
+};
+function renderToday(fresh) {
+  const sorted = S.log.slice().sort((a, b) => b.t - a.t), list = S.showAll ? sorted : sorted.slice(0, 4);
+  $('#tl').innerHTML = list.map(e => {
+    const t = e.k === 'pee' ? '去了一趟' : esc(e.name);
+    const m = e.k === 'drink' ? `${e.ml} ml${e.caf ? ' · 咖啡因' : ''}` : e.k === 'eat' ? `约 ${e.kcal} kcal` : e.k === 'move' ? `${e.min} 分钟 · 约 ${e.kcal} kcal` : '';
+    const lead = e.photo ? `<img class="th" src="${e.photo}" alt="">` : `<span class="ic">${icons[e.k]}</span>`;
+    return `<div class="row${e === fresh ? ' new' : ''}"><span class="t">${hm(e.t)}</span><span class="nm">${lead}<span>${t}</span></span><span class="m">${m}</span></div>`;
+  }).join('');
+  $('#moreBtn').textContent = S.showAll ? '收起' : `全部 ${S.log.length} 条`;
+  const mv = S.log.filter(e => e.k === 'move'), pees = S.log.filter(e => e.k === 'pee');
+  $('#sKcal').innerHTML = fmt(kcalIn()) + '<sup>kcal</sup>';
+  $('#sMove').innerHTML = mv.reduce((s, e) => s + e.min, 0) + '<sup>min</sup>';
+  $('#sPee').innerHTML = pees.length + '<sup>次</sup>';
+  blobMap();
+  // 下一次想去：上一次排尿后，按"回声时间"估一个时间
+  if (!S.log.length) $('#nextP').textContent = '记一杯水，小急就开始算';
+  else if (!pees.length) $('#nextP').textContent = '去一趟厕所时点一下水滴';
+  else {
+    const lastPee = Math.max(...pees.map(e => e.t)), ml = S.log.filter(e => e.k === 'drink' && e.t > lastPee - 30).reduce((s, e) => s + e.ml, 0);
+    const echo = echoTime(), next = lastPee + Math.max(60, (echo || 150) + 40 - ml * .1);
+    $('#nextP').textContent = next > S.now ? `下一次大约 ${hm(next)} 想去` : '差不多该去一趟了';
+  }
+  if (S.view === 'today') readToday();
+}
+// 回声时间：喝完到下一次上厕所的平均分钟数（只用真实记录）
+function echoTime() {
+  const ps = S.log.filter(e => e.k === 'pee').map(e => e.t).sort((a, b) => a - b), gaps = [];
+  for (const d of S.log.filter(e => e.k === 'drink')) { const n = ps.find(t => t > d.t + 20); if (n != null && n - d.t < 300) gaps.push(n - d.t); }
+  return gaps.length >= 2 ? Math.round(gaps.reduce((s, g) => s + g, 0) / gaps.length) : null;
+}
+let shownWater = water();
+function readToday() {
+  $('#big').innerHTML = fmt(shownWater) + '<small>ml</small>';
+  $('#cap').textContent = `今天喝的水 · 目标 ${fmt(GOAL)}`;
+}
+function tweenWater() {
+  const tgt = water();
+  const f = () => { shownWater += (tgt - shownWater) * .12; if (Math.abs(tgt - shownWater) < 1) shownWater = tgt; if (S.view === 'today') { readToday(); ticks(shownWater / GOAL); } if (shownWater !== tgt) requestAnimationFrame(f); };
+  f();
+}
+function addEntry(e, msg, extra) {
+  if (!S.demo) { S.now = nowMin(); checkDay(); } e.t = S.now; S.log.push(e); persist(); renderToday(e); closeSheet();
+  if (e.k === 'drink') { G.levelT = Math.min(1, water() / GOAL) * .9; impulse(.5, -9, 10); burst(14); buzz([6, 30, 6]); tweenWater(); }
+  toast(msg || '记下了', [...(extra || []), { label: '撤销', fn: () => undo(e) }]);
+  return e;
+}
+function undo(e) {
+  const i = S.log.indexOf(e); if (i < 0) return; S.log.splice(i, 1); persist(); renderToday();
+  if (e.k === 'drink') { G.levelT = Math.min(1, water() / GOAL) * .9; tweenWater(); }
+  toast('撤销了');
+}
+// 底部操作
+const IC = {
+  cam: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2.5" y="6" width="19" height="14" rx="4"/><circle cx="12" cy="13" r="3.8"/><path d="M8 6l1.6-2.2h4.8L16 6"/></svg>',
+  cup: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M6 3h12l-1.6 17a1.5 1.5 0 0 1-1.5 1.3H9.1a1.5 1.5 0 0 1-1.5-1.3z"/><path d="M6.8 10h10.4"/></svg>',
+  drop: '<svg width="20" height="22" viewBox="0 0 24 26" fill="currentColor"><path d="M12 1.5S3.5 11 3.5 16.5a8.5 8.5 0 0 0 17 0C20.5 11 12 1.5 12 1.5z"/></svg>',
+  plus: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+  eat: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M3 12h18a9 9 0 0 1-18 0z"/><path d="M9 8c0-2 2-2 2-4M14 8c0-2 2-2 2-4"/></svg>',
+  move: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="14" cy="4.5" r="1.8"/><path d="M8 21l3-6 3 2 1 4M7 11l3-3 3 1 2 3 3 1"/></svg>',
+  spark: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M12 3l2.2 6.3L20.5 12l-6.3 2.2L12 20.5l-2.2-6.3L3.5 12l6.3-2.7z"/></svg>'
+};
+function footToday() {
+  $('#foot').innerHTML = `<div class="acts">
+    <button class="snap" id="snapBtn">${IC.cam}<span>随手拍</span></button>
+    <button class="act" id="waterBtn" aria-label="喝了一杯水"><span class="o">${IC.cup}</span>喝一杯</button>
+    <button class="act" id="peeBtn" aria-label="去了一趟厕所"><span class="o">${IC.drop}</span>去了一趟</button>
+    <button class="act" id="otherBtn" aria-label="记点别的"><span class="o">${IC.plus}</span>其他</button></div>`;
+  $('#snapBtn').addEventListener('click', snap);
+  $('#waterBtn').addEventListener('click', () => {
+    const e = addEntry({ k: 'drink', name: '水', ml: 250 }, '+250 ml 水', [{ label: '改成大杯', fn: () => { e.ml = 500; persist(); renderToday(); G.levelT = Math.min(1, water() / GOAL) * .9; tweenWater(); impulse(.5, -6, 10); toast('改成 500 ml 了', [{ label: '撤销', fn: () => undo(e) }]); } }]);
+  });
+  $('#peeBtn').addEventListener('click', ev => {
+    const o = ev.currentTarget.querySelector('.o'), r = document.createElement('span'); r.className = 'rip'; o.appendChild(r); setTimeout(() => r.remove(), 800);
+    const ps = S.log.filter(x => x.k === 'pee').map(x => x.t);
+    impulse(.5, 5, 20); buzz(14);
+    addEntry({ k: 'pee' }, ps.length ? `记下了 · 距上次 ${dur(nowMin() - Math.max(...ps))}` : '记下了 · 今天第一次');
+  });
+  $('#otherBtn').addEventListener('click', moreSheet);
+}
+// 随手拍：手机直接打开相机；电脑上给两个选项
+let demoI = 0;
+function snap() {
+  buzz(6);
+  if (matchMedia('(pointer:coarse)').matches) { $('#snapIn').click(); return; }
+  openSheet(`<h3>随手拍</h3><p class="small" style="text-align:center;margin-top:-8px">吃的、喝的都行，小急来认</p>
+    <div class="tiles two"><label for="snapIn" class="dark">${IC.cam}选一张照片</label><button id="sayInstead">${IC.spark}改成说一句</button></div>`, () => {
+    $('#sayInstead').addEventListener('click', moreSheet);
+  });
+}
+function demoShot() { const ks = ['ramen', 'salad', 'latte', 'beef', 'oat']; const k = ks[demoI++ % ks.length]; photoSheet(foodArt(k, 11 + demoI * 7), k); }
+$('#snapIn').addEventListener('change', e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  const rd = new FileReader(); rd.onload = () => shrink(rd.result).then(src => photoSheet(src, null)); rd.readAsDataURL(f);
+});
+function shrink(src) {
+  return new Promise(res => { const im = new Image(); im.onload = () => { const k = Math.min(1, 640 / Math.max(im.width, im.height)); const c = document.createElement('canvas'); c.width = im.width * k; c.height = im.height * k; c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); res(c.toDataURL('image/jpeg', .72)); }; im.onerror = () => res(src); im.src = src; });
+}
+function photoSheet(src, kind) {
+  let guess = null, f = 1, t = 'eat';
+  openSheet(`<div class="shot"><img src="${src}" alt="刚拍的照片"><div class="scan" id="scan"></div><div class="tag" id="tag"><span style="font-family:var(--body);font-size:13px">小急在认…</span></div></div>
+    <div id="after" hidden style="display:flex;flex-direction:column;gap:12px">
+      <div class="pills big-pills" id="ptype"><button data-t="eat" aria-pressed="false">吃的</button><button data-t="drink" aria-pressed="false">喝的</button></div>
+      <div class="pills big-pills" id="ppor"><button data-f=".7" aria-pressed="false">少一点</button><button data-f="1" aria-pressed="true">正常</button><button data-f="1.3" aria-pressed="false">多一点</button></div>
+      <div class="say" style="padding-right:16px"><input id="rename" placeholder="名字不对？直接改" aria-label="改名字"></div>
+      <button class="go wide" id="photoSave">记下</button>
+    </div>`, () => {
+    const upd = () => {
+      const name = $('#rename').value.trim() || guess.n, kc = guess.kcal == null ? null : Math.round(guess.kcal * f), ml = Math.round((guess.ml || 350) * f);
+      $('#tag').innerHTML = name ? `<b>${esc(name)}</b><span>${kc == null ? '热量还没估出来' : `约 ${kc} kcal`}${t === 'drink' ? ` · ${ml} ml` : ''} · 估算</span>` : '<b>没认出来</b><span>在下面写个名字，小急帮你估</span>';
+      const b = $('#photoSave'); b.disabled = !name; b.style.opacity = name ? 1 : .35; b.textContent = kc == null ? '记下' : `记下 · ${kc} kcal`;
+    };
+    const ready = g => {
+      guess = { ...g }; t = g.t || 'eat'; const sc = $('#scan'); sc && sc.remove();
+      $('#after').hidden = false; $$('#ptype button').forEach(b => b.setAttribute('aria-pressed', b.dataset.t === t));
+      upd(); buzz([6, 40, 6]); if (!guess.n) $('#rename').focus();
+    };
+    if (kind) setTimeout(() => ready(KB[kind]), 1000);
+    else api('photo', { image: src }).then(ready).catch(e => { ready({ n: '', kcal: null, t: 'eat' }); toast(e.status === 422 ? '照片里没看到食物或饮品，可以写个名字再估' : '小急暂时看不了图，写个名字也行'); });
+    let reT;
+    $('#rename').addEventListener('change', () => {
+      const q = $('#rename').value.trim(); if (!q || S.demo) return;
+      clearTimeout(reT); reT = setTimeout(() => api('parse', { text: q }).then(it => { if (it.kcal != null) { guess.kcal = it.kcal; if (it.k === 'drink') { t = 'drink'; guess.ml = it.ml; } upd(); } }).catch(() => {}), 200);
+    });
+    press('#ptype button', b => { t = b.dataset.t; upd(); });
+    press('#ppor button', b => { f = +b.dataset.f; upd(); });
+    $('#rename').addEventListener('input', upd);
+    $('#photoSave').addEventListener('click', () => {
+      const name = $('#rename').value.trim() || guess.n; if (!name) return;
+      const kc = guess.kcal == null ? 0 : Math.round(guess.kcal * f);
+      const e = t === 'eat' ? { k: 'eat', name, kcal: kc, photo: src } : { k: 'drink', name, kcal: kc, ml: Math.round((guess.ml || 350) * f), caf: !!guess.caf, photo: src };
+      addEntry(e, `记下了 · ${name}`);
+    });
+  });
+}
+function moreSheet() {
+  openSheet(`<h3>记点别的</h3>
+    <div class="say"><input id="sayIn" placeholder="说一句：晚上跑步 30 分钟" aria-label="用一句话记录"><button id="sayGo">记</button></div>
+    <div id="aiSlot"></div>
+    <div class="tiles"><button id="tEat">${IC.eat}吃了什么</button><button id="tDrink">${IC.cup}别的饮品</button><button id="tMove">${IC.move}动了一下</button></div>`, () => {
+    $('#sayGo').addEventListener('click', doSay);
+    $('#sayIn').addEventListener('keydown', e => { if (e.key === 'Enter') doSay(); });
+    $('#tEat').addEventListener('click', eatSheet); $('#tDrink').addEventListener('click', drinkSheet); $('#tMove').addEventListener('click', moveSheet);
+  });
+}
+function drinkSheet() {
+  let type = '咖啡', ml = 350;
+  const kc = { 水: 0, 咖啡: 15, 茶: 0, 奶茶: .8, 果汁: .45, 酒: .43 };
+  const artOf = { 水: 'water', 咖啡: 'latte', 茶: 'tea', 奶茶: 'latte', 果汁: 'juice', 酒: 'wine' };
+  const cache = {};
+  const draw = () => (cache[type] ||= foodArt(artOf[type], 11 + type.length));
+  openSheet(`<h3>喝了什么</h3>
+    <div class="pills big-pills" id="dt">${Object.keys(kc).map(k => `<button data-t="${k}" aria-pressed="${k === type}">${k}</button>`).join('')}</div>
+    <div class="pills big-pills" id="ds"><button data-ml="250" aria-pressed="false">小杯</button><button data-ml="350" aria-pressed="true">中杯</button><button data-ml="500" aria-pressed="false">大杯</button></div>
+    <div id="dPrev"></div>
+    <button class="go wide" id="dSave">记下 咖啡 350 ml</button>`, () => {
+    const upd = () => {
+      $('#dSave').textContent = `记下 ${type} ${ml} ml`;
+      // 快捷添加也配一张现画的饮品图
+      $('#dPrev').innerHTML = `<img src="${draw()}" alt="估算配图" style="width:100%;height:92px;object-fit:cover;border-radius:14px">`;
+    };
+    press('#dt button', b => { type = b.dataset.t; upd(); });
+    press('#ds button', b => { ml = +b.dataset.ml; upd(); });
+    $('#dSave').addEventListener('click', () => { const r = kc[type]; addEntry({ k: 'drink', name: type, ml, caf: type === '咖啡' || type === '茶', alc: type === '酒', kcal: r >= 1 ? r : Math.round(ml * r), photo: draw(), illust: true }, `记下了 · ${type} ${ml} ml`); });
+    upd();
+  });
+}
+function segPill() {
+  const seg = $('.seg'), on = seg && seg.querySelector('[aria-pressed="true"]'), p = seg && seg.querySelector('.pill');
+  if (!p) return; if (!on) { p.style.width = '0'; return; }
+  p.style.left = on.offsetLeft + 'px'; p.style.width = on.offsetWidth + 'px';
+}
+
+function aiCard(item) {
+  const desc = item.k === 'drink' ? `${item.ml} ml${item.caf ? ' · 含咖啡因' : ''}${item.alc ? ' · 含酒精' : ''}${item.kcal ? ` · 约 ${item.kcal} kcal` : ''}` : item.k === 'eat' ? `约 ${item.kcal} kcal` : `${item.min} 分钟 · 约 ${item.kcal} kcal`;
+  const lbl = { drink: '喝', eat: '吃', move: '动' }[item.k];
+  $('#aiSlot').innerHTML = `<div class="ai"><span class="lbl">小急理解为 · ${lbl} · 估算</span><span><b style="font-weight:500">${esc(item.name)}</b> · ${desc}</span><div class="acts"><button class="ok" id="aiOk">对，记下</button><button id="aiNo">不对</button></div></div>`;
+  $('#aiOk').addEventListener('click', () => addEntry(item, `记下了 · ${item.name}`));
+  $('#aiNo').addEventListener('click', () => { $('#aiSlot').innerHTML = ''; item.k === 'eat' ? eatSheet() : item.k === 'move' ? moveSheet() : null; });
+}
+async function doSay() {
+  const q = $('#sayIn').value.trim(); if (!q) { $('#sayIn').focus(); return; }
+  $('#aiSlot').innerHTML = '<div class="ai"><span class="lbl">小急在看…</span></div>';
+  try { aiCard(await api('parse', { text: q })); }
+  catch (e) { $('#aiSlot').innerHTML = `<div class="ai"><span class="lbl">${e.status === 429 ? '太快了，歇一会儿' : '小急现在连不上'}</span><span>可以用下面的按钮手动记。</span></div>`; }
+}
+$('#moreBtn').addEventListener('click', () => { S.showAll = !S.showAll; renderToday(); });
+
+// ================= 弹层 =================
+const sheet = $('#sheet'), scrim = $('#scrim');
+function openSheet(html, init) { sheet.innerHTML = '<div class="grab"></div>' + html; scrim.classList.add('on'); sheet.classList.add('on'); init && init(); }
+function closeSheet() { scrim.classList.remove('on'); sheet.classList.remove('on'); }
+scrim.addEventListener('click', closeSheet);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeSheet(); } });
+let sy0 = null;
+sheet.addEventListener('touchstart', e => { if (sheet.scrollTop <= 0) sy0 = e.touches[0].clientY; }, { passive: true });
+sheet.addEventListener('touchmove', e => { if (sy0 != null && e.touches[0].clientY - sy0 > 70) { sy0 = null; closeSheet(); } }, { passive: true });
+const press = (sel, cb) => $$(sel).forEach(b => b.addEventListener('click', () => { $$(sel).forEach(x => x.setAttribute('aria-pressed', x === b)); cb(b); buzz(4); }));
+
+function eatSheet() {
+  let base = null, f = 1;
+  const tpl = [['燕麦酸奶碗', 380, 'oat'], ['便当', 650, 'bento'], ['轻食沙拉', 320, 'salad'], ['一碗面', 560, 'ramen'], ['水果', 90, 'apple'], ['零食', 220, 'snack']];
+  openSheet(`<h3>吃了什么</h3>
+    <label class="photo" id="ph"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="6" width="18" height="14" rx="3"/><circle cx="12" cy="13" r="3.5"/><path d="M8 6l1.5-2h5L16 6"/></svg><span>拍一张，小急帮你估</span><input type="file" id="pic" accept="image/*" capture="environment"></label>
+    <div class="pills" id="tpl">${tpl.map(([n, k, art]) => `<button data-n="${n}" data-k="${k}" data-art="${art}" aria-pressed="false">${n}</button>`).join('')}</div>
+    <div id="eatAi"></div>
+    <div class="rng" id="por" hidden><div class="top"><span>份量</span><b id="kv">0 kcal</b></div>
+      <div class="pills" id="pf"><button data-f=".7" aria-pressed="false">小份</button><button data-f="1" aria-pressed="true">正常</button><button data-f="1.3" aria-pressed="false">大份</button></div></div>
+    <button class="go wide" id="eatSave" disabled style="opacity:.35">先拍照或选一个</button>`, () => {
+    const show = (n, k, src, art) => {
+      // 快捷添加也给一张现画的餐食图，和演示里的拼图观感一致
+      base = { n, k, photo: art ? foodArt(art, n.length * 7 + k) : null }; f = 1; $('#por').hidden = false;
+      $$('#pf button').forEach(x => x.setAttribute('aria-pressed', x.dataset.f === '1'));
+      $('#eatAi').innerHTML = `<div class="ai">${base.photo ? `<img src="${base.photo}" alt="估算配图" style="width:100%;height:104px;object-fit:cover;border-radius:14px">` : ''}<span class="lbl">${src} · 估算</span><span><b style="font-weight:500">${n}</b> · 约 ${k} kcal</span></div>`;
+      upd();
+    };
+    const upd = () => { const k = Math.round(base.k * f); $('#kv').textContent = k + ' kcal'; const b = $('#eatSave'); b.disabled = false; b.style.opacity = 1; b.textContent = `记下 ${base.n} · ${k} kcal`; };
+    $('#pic').addEventListener('change', e => {
+      const file = e.target.files[0]; if (!file) return;
+      const rd = new FileReader();
+      // 走真实的「随手拍」识别流程，不再写死一个假结果
+      rd.onload = () => shrink(rd.result).then(src => { closeSheet(); photoSheet(src, null); });
+      rd.readAsDataURL(file);
+    });
+    press('#tpl button', b => show(b.dataset.n, +b.dataset.k, '模板', b.dataset.art));
+    press('#pf button', b => { f = +b.dataset.f; base && upd(); });
+    $('#eatSave').addEventListener('click', () => base && addEntry({ k: 'eat', name: base.n, kcal: Math.round(base.k * f), ...(base.photo ? { photo: base.photo, illust: true } : {}) }, '记下了 · 热量是估算值'));
+  });
+}
+function moveSheet() {
+  const rate = { 快走: 5, 跑步: 10, 骑行: 7, 力量: 6, 瑜伽: 3, 游泳: 9 }; let type = '快走', min = 30;
+  openSheet(`<h3>动了多久</h3>
+    <div class="pills" id="mt">${Object.keys(rate).map((t, i) => `<button data-t="${t}" aria-pressed="${i === 0}">${t}</button>`).join('')}</div>
+    <div class="rng"><div class="top"><span>时长</span><b id="mv">30 分钟</b></div><input type="range" id="mr" min="5" max="120" step="5" value="30" aria-label="运动时长"></div>
+    <div class="rng"><div class="top"><span>大约消耗 · 估算</span><b id="kv2">150 kcal</b></div></div>
+    <button class="go wide" id="mvSave">记下 快走 30 分钟</button>`, () => {
+    const upd = () => { $('#mv').textContent = min + ' 分钟'; $('#kv2').textContent = rate[type] * min + ' kcal'; $('#mvSave').textContent = `记下 ${type} ${min} 分钟`; };
+    press('#mt button', b => { type = b.dataset.t; upd(); });
+    $('#mr').addEventListener('input', e => { min = +e.target.value; upd(); });
+    $('#mvSave').addEventListener('click', () => addEntry({ k: 'move', name: type, min, kcal: rate[type] * min }, `记下了 · 约 ${rate[type] * min} kcal`));
+  });
+}
+
+function meSheet() {
+  openSheet(`<h3>我的</h3>
+    <div class="say" style="padding-right:6px"><input id="nickIn" maxlength="12" placeholder="排行榜上的名字" value="${esc(S.nick)}" aria-label="昵称"><button id="nickGo">保存</button></div>
+    <div class="list">
+
+      <div class="li"><span>备用闹钟</span><span class="r n" style="font-size:17px">${hm(S.target)}</span></div>
+      <div class="li"><span>每日饮水目标</span><span class="r">2.0 L</span></div>
+      <div class="li"><span>每日摄入参考</span><span class="r">1,900 kcal</span></div>
+    </div>
+    <div class="list">
+      <div class="li"><span>夜间挑战</span><button class="sw" role="switch" id="swN" aria-checked="${S.nightOn}" aria-label="夜间挑战"></button></div>
+      <div class="li"><span>重力感应</span><button class="sw" role="switch" id="swG" aria-checked="${gyroOn}" aria-label="重力感应"></button></div>
+      <div class="li"><span>震动反馈</span><button class="sw" role="switch" aria-checked="true" aria-label="震动反馈" onclick="this.setAttribute('aria-checked',this.getAttribute('aria-checked')!=='true')"></button></div>
+    </div>
+    <div class="list">
+      <div class="li"><span>睡前 2 小时饮水上限</span><span class="r">800 ml · 不可调</span></div>
+      <div class="li"><span>日常建议</span><span class="r">200–500 ml</span></div>
+    </div>
+    <p class="small">如果你常常起夜、正在怀孕、有肾脏或心血管疾病，或在服用利尿药，请关闭夜间挑战，只用记录功能。自然急提供生活参考和趣味实验，不替代医生。</p>
+    <div class="list"><div class="li"><span>记录只存在这台手机</span><button class="r" id="exp" style="color:var(--ink);text-decoration:underline">复制 JSON</button></div></div>`, () => {
+    $('#nickGo').addEventListener('click', async () => {
+      const v = $('#nickIn').value.trim(); if (!v) return;
+      try { const r = await api('nick', { uid: S.uid, nick: v }); S.nick = r.nick; persist(); toast('排行榜上会显示「' + r.nick + '」'); } catch (_) { toast('没保存上，稍后再试'); }
+    });
+    $('#swN').addEventListener('click', e => { S.nightOn = !S.nightOn; persist(); e.currentTarget.setAttribute('aria-checked', S.nightOn); toast(S.nightOn ? '夜间挑战已打开' : '夜间挑战已关闭'); if (S.view === 'tonight') go('tonight'); });
+    $('#swG').addEventListener('click', async e => {
+      const want = !gyroOn;
+      if (want) { gyroOn = true; await enableGyro(); if (!gyroOn) return; }
+      else { gyroOn = false; detachGyro(); G.thT = 0; }
+      e.currentTarget.setAttribute('aria-checked', gyroOn);
+      toast(gyroOn ? '重力感应已打开' : '重力感应已关闭，可以左右拖动杯子');
+    });
+    $('#exp').addEventListener('click', async () => { try { await navigator.clipboard.writeText(JSON.stringify(S.log, null, 2)); toast('已复制今天的记录'); } catch (_) { toast('复制没成功'); } });
+  });
+}
+$('#meBtn').addEventListener('click', meSheet);
+
+// ================= 今晚 =================
+
+let planT;
+async function plan() {
+  if (S.demo) return;
+  const eve = S.log.filter(e => e.k === 'drink' && e.t >= 16 * 60);
+  try {
+    const r = await api('night', { uid: S.uid, target: S.target, ml: S.tonight, sleepAt: sleepStart(), evening: { ml: eve.reduce((s, e) => s + e.ml, 0), caf: eve.some(e => e.caf), alc: eve.some(e => e.alc) } });
+    S.model = r.model; S.adj = r.adj || 0; S.note = r.note || ''; if (S.me) S.me.stats = r.stats; else S.me = { nights: [], stats: r.stats };
+    paintNights(); renderTonight();
+  } catch (_) { S.note = ''; renderTonight(); }
+}
+const replan = () => { S.note = ''; clearTimeout(planT); planT = setTimeout(plan, 900); persist(); };
+function setTonight(v) {
+  const was = S.tonight; S.tonight = Math.max(0, Math.min(CAP, Math.round(v / 10) * 10));
+  if (S.tonight === CAP && was < CAP) { buzz([10, 40, 10]); toast('到顶了 · 800 ml'); impulse(.5, 6, 20); }
+  if (S.tonight !== was) { G.levelT = S.tonight / CAP * .9; renderTonight(); replan(); }
+}
+function renderTonight() {
+  const w = wakeAt(S.tonight), rec = recFor(S.target);
+  $('#tVal').textContent = hm(S.target);
+  $('#fcWake').textContent = `${hm(w - 18)}–${hm(w + 18)}`;
+  $('#fcRec').textContent = `${rec[0]}–${rec[1]}`;
+  let msg;
+  if (S.tonight >= CAP) msg = '到顶了。再多就伤睡眠了，今晚就这样。';
+  else if (S.tonight < rec[0]) msg = `少了一点，身体可能会睡过 ${hm(S.target)}。备用闹钟兜着。`;
+  else if (S.tonight > rec[1]) msg = '多了点，它可能会提前来敲门。';
+  else msg = `这杯刚好，今晚看好 ${hm(w)} 前后。`;
+  $('#noteN').textContent = S.note || msg;
+  const n = myNights().stats.n;
+  $('#calib').textContent = n ? `个人模型已用你的 ${n} 晚数据校准：每多喝 100 ml，大约早醒 ${Math.round(M().b * 100)} 分钟。` : '前几晚是校准期。早上醒来记得回答「谁叫醒了你」，模型会越来越准。';
+  if (S.view === 'tonight') {
+    $('#big').innerHTML = S.armed ? hm(w) + '<small>见</small>' : hm(w) + '<small>醒</small>';
+    $('#cap').textContent = S.armed ? `今晚 ${S.tonight} ml · 备用闹钟 ${hm(S.target)}` : `睡前 ${S.tonight} ml · 上下拖动水杯`;
+    ticks(S.tonight / CAP, S.tonight >= CAP ? '#D98F68' : null);
+  }
+  const left = (w - S.now + 1440) % 1440;
+  const leftM = Math.round(left); $('#cd').textContent = `${Math.floor(leftM / 60)} 时 ${leftM % 60} 分`;
+  $('#cdSub').textContent = `今晚 ${S.tonight} ml · 备用闹钟 ${hm(S.target)} 已开。晚安，交给身体。`;
+}
+$('#tPlus').addEventListener('click', () => { S.target = Math.min(8 * 60 + 30, S.target + 10); replan(); renderTonight(); buzz(4); });
+$('#tMinus').addEventListener('click', () => { S.target = Math.max(6 * 60, S.target - 10); replan(); renderTonight(); buzz(4); });
+function footTonight() {
+  if (!S.nightOn) { $('#foot').innerHTML = `<button class="go wide" id="openMe">去设置里打开夜间挑战</button>`; $('#openMe').addEventListener('click', meSheet); return; }
+  if (S.armed) {
+    $('#foot').innerHTML = `<div class="pair"><button class="go ghost" id="undo">改一改</button><button class="go" id="wake">我醒了</button></div>`;
+    $('#undo').addEventListener('click', () => { S.armed = false; persist(); go('tonight'); });
+    $('#wake').addEventListener('click', openMorning);
+  } else {
+    $('#foot').innerHTML = `<div class="ctrl"><div class="seg" role="group" aria-label="快速选量"><span class="pill"></span>${[150, 250, 400].map(v => `<button data-ml="${v}" aria-pressed="${v === S.tonight}">${v}</button>`).join('')}</div><button class="go" id="sleepBtn">睡了</button></div>`;
+    segPill();
+    $$('.seg button').forEach(b => b.addEventListener('click', () => { setTonight(+b.dataset.ml); $$('.seg button').forEach(x => x.setAttribute('aria-pressed', x === b)); segPill(); buzz(4); }));
+    $('#sleepBtn').addEventListener('click', () => { morningShown = false; S.sleepAt = sleepStart(); S.sleepMl = S.tonight; S.armedTs = Date.now(); S.armed = true; persist(); buzz([8, 60, 8]); go('tonight'); toast('晚安。记得定好备用闹钟 ' + hm(S.target)); });
+  }
+}
+
+// ================= 早晨 =================
+const morning = $('#morning');
+function openMorning() { morningShown = true; $('#wakeIn').value = hm(S.demo ? 412 : nowMin()); $('#ask').hidden = false; $('#ask').style.display = 'flex'; $('#result').hidden = true; morning.classList.add('on'); }
+function demoCard(who, at) {
+  const tg = S.target, err = at - tg;
+  const c = { body: { l: ['身体', hm(at)], r: ['闹钟', hm(tg)], h: err <= 0 ? `身体赢了 ${-err} 分钟` : `身体晚了 ${err} 分钟` }, alarm: { l: ['闹钟', hm(tg)], r: ['身体', '还在睡'], h: '这次闹钟先到' }, self: { l: ['你自己', hm(at)], r: ['闹钟', hm(tg)], h: '身体和闹钟都输给了你' }, flop: { l: ['身体', hm(at)], r: ['目标', hm(tg)], h: '身体今天加班了', flop: true } }[who];
+  c.p = '演示数据 · 第 12 夜 · 命中 7 次 · 称号「瑞士机芯」';
+  return { card: c, n: 12, share: { id: null, text: `演示 · 自然急 · 第 12 夜｜${c.l[0]} ${c.l[1]} vs ${c.r[0]} ${c.r[1]}，${c.h}。` } };
+}
+let morningBusy = false;
+$$('#morning [data-who]').forEach(b => b.addEventListener('click', async () => {
+  if (morningBusy) return;
+  const who = b.dataset.who, [hh, mm] = ($('#wakeIn').value || hm(nowMin())).split(':').map(Number), at = hh * 60 + mm;
+  buzz(10);
+  let r;
+  if (S.demo) r = demoCard(who, at);
+  else {
+    morningBusy = true; $$('#morning [data-who]').forEach(x => x.disabled = true);
+    try { r = await api('morning', { uid: S.uid, who, at, target: S.target, ml: S.sleepMl ?? S.tonight, sleepAt: S.sleepAt ?? BED }); }
+    catch (_) { morningBusy = false; $$('#morning [data-who]').forEach(x => x.disabled = false); toast('没连上服务器，等会儿再报一次'); return; }
+    morningBusy = false; $$('#morning [data-who]').forEach(x => x.disabled = false); S.model = r.model; S.armed = false; persist(); loadMe();
+  }
+  const c = r.card;
+  $('#ask').style.display = 'none';
+  const box = $('#result'); box.hidden = false; box.style.display = 'flex';
+  box.innerHTML = `<div class="duel${c.flop ? ' flop' : ''}"><div class="halo"></div><div class="brand">自然急 · 第 ${r.n} 夜</div>
+    <div class="score"><div class="side"><span>${c.l[0]}</span><b>${c.l[1]}</b></div><span class="vs">vs</span><div class="side r"><span>${c.r[0]}</span><b style="${c.r[1].length > 5 ? 'font-family:var(--body);font-size:26px;font-weight:500' : ''}">${c.r[1]}</b></div></div>
+    <h4>${c.h}</h4><p>${c.p}</p></div>
+    <div class="pair"><button class="go ghost" id="share">分享给朋友</button><button class="go" id="done">好，起床</button></div>`;
+  $('#share').addEventListener('click', async () => {
+    const url = r.share.id ? location.origin + '/s/' + r.share.id : location.origin;
+    try { if (navigator.share) { await navigator.share({ title: '自然急', text: r.share.text, url }); return; } } catch (e) { if (e && e.name === 'AbortError') return; }
+    try { await navigator.clipboard.writeText(r.share.text + ' ' + url); toast('链接已复制，发给朋友吧'); } catch (_) { toast('复制没成功，可以截图分享'); }
+  });
+  $('#done').addEventListener('click', () => { morning.classList.remove('on'); S.armed = false; persist(); go('review'); });
+}));
+
+// ================= 回顾 =================
+function chart() {
+  const ns = myNights().nights.slice(-14), L = 30, R = 344, T = 10, B = 132;
+  if (!ns.length) { $('#chart').innerHTML = '<text x="175" y="84" text-anchor="middle" font-size="13" fill="#8B867E">还没有夜间记录，今晚试试</text>'; return; }
+  const data = ns.map(g => g.who === 'body' ? g.err : g.who === 'flop' ? -999 : null);
+  const X = i => data.length < 2 ? (L + R) / 2 : L + i * (R - L) / (data.length - 1), Y = v => T + (60 - Math.max(-60, Math.min(60, v))) / 120 * (B - T);
+  let s = `<rect x="${L}" y="${Y(30)}" width="${R - L}" height="${Y(-30) - Y(30)}" rx="10" fill="#1A191710"/>`;
+  [60, 30, 0, -30, -60].forEach(v => { s += `<line x1="${L}" x2="${R}" y1="${Y(v)}" y2="${Y(v)}" stroke="#1A1917" stroke-opacity="${v === 0 ? .5 : .1}" ${v ? 'stroke-dasharray="2 4"' : ''}/><text x="${L - 6}" y="${Y(v) + 3.5}" text-anchor="end" font-size="10" fill="#8B867E" font-family="Jost,sans-serif">${v > 0 ? '+' + v : v}</text>`; });
+  const pts = data.map((v, i) => [i, v]).filter(p => p[1] != null && p[1] >= -60);
+  s += `<path d="${pts.map((p, k) => (k ? 'L' : 'M') + X(p[0]) + ' ' + Y(p[1])).join('')}" fill="none" stroke="#1A1917" stroke-opacity=".25" stroke-width="1.2"/>`;
+  data.forEach((v, i) => {
+    if (v == null) s += `<circle cx="${X(i)}" cy="${Y(60)}" r="4" fill="none" stroke="#8B867E" stroke-width="1.4"><title>闹钟先响</title></circle>`;
+    else if (v < -60) s += `<path d="M${X(i)} ${B + 6}l-5 -8h10z" fill="#D98F68"><title>翻车</title></path>`;
+    else s += `<circle cx="${X(i)}" cy="${Y(v)}" r="${i === data.length - 1 ? 5.5 : 4.2}" fill="${Math.abs(v) <= 30 ? '#1D1C1A' : '#D98F68'}"/>`;
+  });
+  s += `<text x="${L}" y="${B + 26}" font-size="10" fill="#8B867E">较早</text><text x="${R}" y="${B + 26}" text-anchor="end" font-size="10" fill="#8B867E">最近</text><text x="${(L + R) / 2}" y="${B + 26}" text-anchor="middle" font-size="10" fill="#8B867E">空心 闹钟先响 · 三角 翻车</text>`;
+  $('#chart').innerHTML = s;
+}
+function paintNights() {
+  const ns = myNights().nights.slice(-21), cls = i => ns[i] ? nightClass(ns[i]) : (i === ns.length ? 'now' : '');
+  $('#nights').innerHTML = Array.from({ length: 21 }, (_, i) => `<i class="${cls(i)}"></i>`).join('');
+  $('#grid21').innerHTML = Array.from({ length: 21 }, (_, i) => `<i class="${cls(i)}">${i + 1}</i>`).join('');
+  const st = myNights().stats;
+  $('#tonH').textContent = `今晚 · 第 ${st.n + 1} 夜`;
+  $('#tonP').textContent = st.n ? `21 夜校准计划 · 命中 ${st.hits} 夜 · 翻车 ${st.flops} 夜` : '21 夜校准计划 · 今晚是第一夜';
+}
+
+function renderReview() {
+  const me = myNights(), st = me.stats;
+  $('#revH').textContent = st.title; $('#revP').textContent = st.n < 3 ? `已记录 ${st.n} 夜，记满 3 夜身体叫醒就有称号` : `连续命中 ${st.streak} 夜 · 共命中 ${st.hits} 夜`;
+  $('#cBig').textContent = `${st.hits}/${st.n}`; $('#cCap').textContent = S.demo ? '演示数据 · 身体命中 / 记录夜数' : '身体命中 / 记录夜数';
+  $('#rm1').innerHTML = st.body + '<small style="font-size:16px"> 次</small>'; $('#rm1p').textContent = st.body ? `少听了 ${st.body} 次闹钟。` : '早上记得回答「谁叫醒了你」。';
+  $('#rm2').innerHTML = st.avgErr == null ? '—' : st.avgErr + '<small style="font-size:16px"> 分钟</small>';
+  const log = S.log, ps = log.filter(e => e.k === 'pee').map(e => e.t).sort((a, b) => a - b), best = {};
+  log.filter(e => e.k === 'drink').forEach(d => { const n = ps.find(t => t > d.t + 20); if (n != null) (best[d.name] ||= []).push(n - d.t); });
+  const top = Object.entries(best).map(([k, v]) => [k, v.reduce((s, x) => s + x, 0) / v.length]).sort((a, b) => a[1] - b[1])[0];
+  $('#rm3').textContent = top ? top[0] : '—'; $('#rm3p').textContent = top ? `今天平均喝完 ${Math.round(top[1])} 分钟就来找你。` : '多记几次喝的就知道了。';
+  const echo = echoTime(); $('#rm4').innerHTML = echo == null ? '—' : echo + '<small style="font-size:16px"> 分钟</small>';
+  chart(); paintNights(); if (S.view === 'review') nightTicks();
+  const b = S.demo ? SAMPLE_BOARD : S.board;
+  $('#boardCap').textContent = S.demo ? '演示数据' : b ? `共 ${b.total || b.list.length} 位玩家` : '加载中';
+  $('#board').innerHTML = !b ? '<div class="li"><span class="small">排行榜加载不了，稍后再看</span></div>' : !b.list.length ? '<div class="li"><span class="small">还没有人上榜，今晚就去试试</span></div>' :
+    b.list.slice(0, 10).map((u, i) => `<div class="li${u.me ? ' me' : ''}"><span><b class="n" style="display:inline-block;width:24px">${i + 1}</b>${esc(u.nick)}${u.me ? '（你）' : ''}</span><span class="r">${esc(u.title)} · 命中 ${u.hits}${u.avgErr != null ? ` · 误差 ${u.avgErr}′` : ''}</span></div>`).join('');
+}
+async function loadMe() {
+  try { S.me = await api('me?uid=' + S.uid); S.model = S.me.model; if (S.me.nick && !S.nick) { S.nick = S.me.nick; persist(); } } catch (_) {}
+  try { S.board = await api('board?uid=' + S.uid); } catch (_) { S.board = null; }
+  paintNights(); if (S.view === 'review') renderReview(); if (S.view === 'tonight') renderTonight();
+}
+
+// ================= 视图切换 =================
+function navPill() {
+  const on = $('#nav [aria-selected="true"]'), p = $('#navPill');
+  p.style.left = on.offsetLeft + 'px'; p.style.width = on.offsetWidth + 'px';
+}
+function go(v, push = true) {
+  S.view = v;
+  $$('#nav button').forEach(b => b.setAttribute('aria-selected', b.dataset.v === v)); navPill();
+  $$('.scroll').forEach(s => s.hidden = s.dataset.view !== v);
+  $('#card').classList.toggle('tall', v === 'review');
+  const glassView = v !== 'review';
+  cv.hidden = !glassView; G.visible = glassView;
+  $('#centerNum').hidden = glassView; $('#read').hidden = !glassView;
+  $('#hint').hidden = v !== 'today';
+  if (v === 'today') { G.levelT = Math.min(1, water() / GOAL) * .9; footToday(); readToday(); ticks(water() / GOAL); }
+  if (v === 'tonight') {
+    G.levelT = S.tonight / CAP * .9;
+    $('#preSleep').style.display = S.nightOn && !S.armed ? 'flex' : 'none';
+    $('#asleep').hidden = !(S.nightOn && S.armed); $('#asleep').style.display = S.nightOn && S.armed ? 'flex' : 'none';
+    $('#nightOff').hidden = S.nightOn;
+    footTonight(); renderTonight(); plan();
+  }
+  if (v === 'review') { renderReview(); nightTicks(); $('#foot').innerHTML = `<button class="go wide" id="toNight">去准备今晚</button>`; $('#toNight').addEventListener('click', () => go('tonight')); }
+  if (push && location.hash !== '#' + v) history.replaceState(null, '', '#' + v);
+  $$('.scroll').forEach(s => s.scrollTop = 0);
+}
+$$('#nav button').forEach(b => b.addEventListener('click', () => { go(b.dataset.v); buzz(4); }));
+window.addEventListener('hashchange', () => { const h = location.hash.slice(1); if (['today', 'tonight', 'review'].includes(h) && h !== S.view) go(h, false); });
+
+// ================= 提示 =================
+function toast(t, acts) {
+  const el = $('#toast'); el.innerHTML = ''; const sp = document.createElement('span'); sp.textContent = t; el.appendChild(sp);
+  (acts || []).forEach(a => { const b = document.createElement('button'); b.textContent = a.label; b.addEventListener('click', () => { a.fn(); buzz(4); }); el.appendChild(b); });
+  const has = !!(acts && acts.length); el.classList.toggle('act-toast', has); el.classList.add('on');
+  clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove('on'), has ? 4000 : 2000);
+}
+
+// ================= 自动演示（声明式步骤 + 有人碰就让位） =================
+const FLOW = {
+  idleMs: 6000, autoStartMs: 30000,
+  chapters: [
+    { t: '一杯水，一个闹钟', b: '自然急记录吃、喝、动和上厕所。杯里的水，就是你今天喝了多少。',
+      refs: ['泌尿科用「首段无中断睡眠」(FUSP) 衡量入睡到第一次起夜的时长，它和 PSQI 睡眠质量显著相关。Bliwise 等，2014', 'Withings × Ferring 分析 25 万可穿戴用户：起夜 0–1 次的人 FUSP 约 243 分钟，3 次以上约 124 分钟。Int J Clin Pract, 2020'] },
+    { t: '随手拍', b: '吃的喝的拍一张，小急认出来、估个热量。照片会拼成今天的饮食图。',
+      refs: ['记录太麻烦是人们放弃健康追踪的主要原因之一。Epstein 等，CHI 2016', 'NutriBench：大模型从文字描述估算餐食营养，可比营养师更快更准。ICLR 2025', '照片估算误差不小，所以每个数字都标「估算」，份量一拨就改。Nutrients, 2025'] },
+    { t: '今晚，让身体当闹钟', b: '睡前倒一小杯水，看明早身体能不能比闹钟先叫醒你。',
+      refs: ['大量饮水后约 40 分钟开始利尿、约 2 小时达峰。JCI 经典水负荷实验', '夜里抗利尿激素升高：年轻人夜间尿量约占全天 14%，老年人约 34%。ICS 定义', '睡前 2 小时饮水硬上限 800 ml；常起夜、孕期、肾病或服利尿药者默认关闭此玩法'] },
+    { t: '回顾', b: '每晚的结果都记下来，看你的身体闹钟有多准。',
+      refs: ['每次早上的反馈都会重新拟合你的个人模型：首段睡眠 ≈ a − b × 睡前饮水，夜数越多越贴近你自己。', '一个人的多夜对照就是 N-of-1 实验。StudyMe, Trials 2022', '对标：DFree 用超声测膀胱预测如厕时间，Withings U-Scan 做居家尿检；自然急不需要任何硬件。'] }
+  ],
+  steps: [
+    { type: 'chapter', i: 0 }, { type: 'view', v: 'today' },
+    { type: 'action', name: 'sway', sel: '#dialbox', text: '倾斜手机，杯里的水会跟着晃' },
+    { type: 'tap', sel: '#waterBtn', text: '喝了一杯，点一下就记上' },
+    { type: 'tap', sel: '#peeBtn', text: '去了一趟，也是点一下' },
+    { type: 'chapter', i: 1 },
+    { type: 'action', name: 'snap', sel: '#snapBtn', text: '拍一张午饭' },
+    { type: 'note', sel: '#map', text: '拍过的照片拼成「今天吃了什么」', scroll: true },
+    { type: 'chapter', i: 2 }, { type: 'view', v: 'tonight' },
+    { type: 'action', name: 'pour', sel: '#dialbox', text: '上下拖杯子，决定今晚喝多少' },
+    { type: 'note', sel: '.fc', text: '喝多少，决定大概几点醒' },
+    { type: 'tap', sel: '#sleepBtn', text: '喝完，点「睡了」' },
+    { type: 'tap', sel: '#wake', text: '第二天早上，醒了' },
+    { type: 'tap', sel: '[data-who="body"]', text: '是身体叫醒的' },
+    { type: 'note', sel: '.duel', text: '生成一张可以分享的对决卡' },
+    { type: 'chapter', i: 3 }, { type: 'tap', sel: '#done', text: '起床，看看回顾' },
+    { type: 'note', sel: '#chart', text: '每晚误差，±30 分钟内算命中', scroll: true },
+    { type: 'note', sel: '#grid21', text: '21 夜校准，第 21 夜领证书', scroll: true },
+    { type: 'reset' }
+  ]
+};
+const D = { active: false, manual: false, automation: false, step: 0, token: 0, timer: null, snap: null, ch: 0, last: performance.now() };
+const app = $('#app'), ring = $('#ring'), finger = $('#finger');
+const dwait = ms => new Promise(res => { const tk = D.token, st = performance.now(); (function tick() { if (tk !== D.token || D.manual || !D.active) return res(false); if (performance.now() - st >= ms) return res(true); setTimeout(tick, 80); })(); });
+function narr(note) {
+  const c = FLOW.chapters[D.ch];
+  $('#dcTitle').textContent = c.t; $('#dcBody').textContent = c.b; $('#dcNote').textContent = note || '';
+  $('#dcRefs').innerHTML = (c.refs || []).map(r => `<li>${esc(r)}</li>`).join('');
+  $('#dcProg').textContent = `第 ${D.ch + 1} / ${FLOW.chapters.length} 章`;
+  $('#dcBar').style.width = (D.step / (FLOW.steps.length - 1) * 100) + '%';
+  $('#dsTitle').textContent = c.t; $('#dsNote').textContent = note || c.b;
+}
+function status(txt, mode) {
+  $('#dcStatus').textContent = txt;
+  const card = $('#demoCard'); card.classList.toggle('run', mode === 'run'); card.classList.toggle('manual', mode === 'manual');
+}
+function place(el, pad = 6) {
+  const a = app.getBoundingClientRect(), r = el.getBoundingClientRect(), cs = getComputedStyle(el);
+  const round = Math.abs(r.width - r.height) < 4 && parseFloat(cs.borderRadius) >= r.width / 2 - 1;
+  Object.assign(ring.style, { left: r.left - a.left - pad + 'px', top: r.top - a.top - pad + 'px', width: r.width + pad * 2 + 'px', height: r.height + pad * 2 + 'px', borderRadius: round ? '50%' : Math.max(16, parseFloat(cs.borderRadius) || 0) + pad + 'px' });
+  ring.classList.add('on');
+  return { x: r.left - a.left + r.width / 2, y: r.top - a.top + r.height / 2 };
+}
+function clearMarks() { ring.classList.remove('on'); finger.classList.remove('on', 'press'); }
+async function pressAt(el) {
+  const c = place(el); finger.style.left = c.x + 'px'; finger.style.top = c.y + 'px'; finger.classList.add('on');
+  if (!await dwait(800)) return false;
+  finger.classList.add('press'); await new Promise(r => setTimeout(r, 160)); finger.classList.remove('press');
+  return true;
+}
+async function auto(fn) { D.automation = true; try { await fn(); } finally { D.automation = false; } }
+const ACTIONS = {
+  async sway() { for (let t = 0; t < 40; t++) { G.thT = Math.sin(t / 40 * Math.PI * 3) * .5; if (!await dwait(70)) { G.thT = 0; return false; } } G.thT = 0; return dwait(600); },
+  async snap(st) {
+    if (!await pressAt($(st.sel))) return false;
+    await auto(() => demoShot()); if (!await dwait(1900)) return false;
+    narr('小急认出来了，估个热量'); const b = $('#photoSave'); if (!b) return true;
+    if (!await pressAt(b)) return false; await auto(() => b.click()); return dwait(1300);
+  },
+  async pour() { for (const v of [150, 300, 450, 600, 450, 300, 250]) { await auto(() => setTonight(v)); if (!await dwait(330)) return false; } return dwait(700); }
+};
+async function runStep(st) {
+  clearMarks();
+  if (st.type === 'chapter') { D.ch = st.i; narr(''); await auto(() => { closeSheet(); }); return dwait(2600); }
+  if (st.type === 'view') { await auto(() => { closeSheet(); go(st.v); }); return dwait(800); }
+  if (st.type === 'reset') { narr('再来一遍'); loadSample(); return dwait(1500); }
+  const el = st.sel && $(st.sel);
+  if (st.sel && !el) return true;
+  if (st.scroll && el) { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); if (!await dwait(500)) return false; }
+  narr(st.text);
+  if (st.type === 'note') { place(el); return dwait(2600); }
+  if (st.type === 'tap') { if (!await pressAt(el)) return false; await auto(() => el.click()); return dwait(1500); }
+  if (st.type === 'action') { if (el) place(el); return ACTIONS[st.name](st); }
+  return true;
+}
+async function runLoop() {
+  const tk = D.token;
+  while (D.active && !D.manual && tk === D.token) {
+    const st = FLOW.steps[D.step];
+    const ok = await runStep(st);
+    if (!ok || tk !== D.token) return;
+    D.step = (D.step + 1) % FLOW.steps.length;
+  }
+}
+function snapshot() { return JSON.stringify({ log: S.log, tonight: S.tonight, target: S.target, armed: S.armed, sleepAt: S.sleepAt, sleepMl: S.sleepMl, armedTs: S.armedTs, nightOn: S.nightOn, model: S.model, adj: S.adj, note: S.note }); }
+function loadSample() {
+  S.demo = true; S.now = 22 * 60 + 40; S.log = SAMPLE_LOG.map(e => ({ ...e })); S.tonight = 250; S.target = 420; S.armed = false; S.sleepAt = null; S.model = null; S.adj = 0; S.note = ''; S.showAll = false;
+  closeSheet(); $('#morning').classList.remove('on'); shownWater = water(); G.levelT = Math.min(1, water() / GOAL) * .9; renderToday(); paintNights(); go('today');
+}
+function restore() {
+  if (!D.snap) return; const o = JSON.parse(D.snap);
+  S.demo = false; Object.assign(S, o); S.showAll = false; S.now = nowMin(); paintNights();
+  closeSheet(); $('#morning').classList.remove('on'); shownWater = water(); G.levelT = Math.min(1, water() / GOAL) * .9; renderToday(); go('today');
+}
+const USER_EVENTS = ['pointerdown', 'touchstart', 'wheel', 'keydown', 'input'];
+function onActivity(e) {
+  D.last = performance.now();
+  if (!D.active || D.automation) return;
+  if (e.target && e.target.closest && e.target.closest('.demo-ctl')) return;
+  D.manual = true; D.token++; clearMarks(); G.thT = gyroOn ? G.thT : 0;
+  status('你接手了 · 6 秒不动会接着演', 'manual'); $('#dsNote').textContent = '你接手了，6 秒不动会接着演';
+  clearTimeout(D.timer); D.timer = setTimeout(resume, FLOW.idleMs);
+}
+USER_EVENTS.forEach(t => document.addEventListener(t, onActivity, { capture: true, passive: true }));
+function resume() { if (!D.active) return; D.manual = false; D.token++; status('自动演示中', 'run'); runLoop(); }
+function startDemo() {
+  if (D.active) return;
+  D.active = true; D.manual = false; D.token++; D.step = 0; D.ch = 0; D.snap = snapshot(); loadSample();
+  $('#dcStart').hidden = true; $('#dcStop').hidden = false; $('#demoStrip').hidden = false; $('#demoPill').hidden = true; $('#hint').style.opacity = 0;
+  status('自动演示中', 'run'); narr(''); runLoop();
+}
+function stopDemo() {
+  if (!D.active) return;
+  D.active = false; D.manual = false; D.token++; clearTimeout(D.timer); clearMarks(); restore();
+  $('#dcStart').hidden = false; $('#dcStop').hidden = true; $('#demoStrip').hidden = true; $('#demoPill').hidden = false;
+  status('自动演示', null); $('#dcNote').textContent = ''; $('#dcBar').style.width = '0';
+  D.last = performance.now();
+}
+$('#dcStart').addEventListener('click', startDemo); $('#demoPill').addEventListener('click', startDemo);
+$('#dcStop').addEventListener('click', stopDemo); $('#dsStop').addEventListener('click', stopDemo);
+if (!matchMedia('(pointer:coarse)').matches) setInterval(() => { if (!D.active && !sheet.classList.contains('on') && performance.now() - D.last > FLOW.autoStartMs) startDemo(); }, 2000);
+
+// ================= 启动 =================
+function boot() {
+  const art = { 燕麦酸奶碗: 'oat', 番茄牛腩饭: 'beef', 生椰拿铁: 'latte', 苹果: 'apple' };
+  SAMPLE_LOG.forEach((e, i) => { if (art[e.name]) e.photo = foodArt(art[e.name], 5 + i * 3); });
+  const d = new Date(); $('#dateH').textContent = `${d.getMonth() + 1} 月 ${d.getDate()} 日 · 周${'日一二三四五六'[d.getDay()]}`;
+  persist(); sizeGlass(); renderToday(); paintNights(); chart(); loadMe();
+  setTimeout(() => { $('#hint').style.opacity = 0; }, 4500);
+  const h = location.hash.slice(1); go(['today', 'tonight', 'review'].includes(h) ? h : 'today', false);
+  G.level = G.levelT; burst(6);
+  // 桌面上没有陀螺仪：鼠标在舞台上移动时轻微倾斜
+  if (!('ontouchstart' in window)) $('#stage').addEventListener('pointermove', e => { if (gyroOn || drag) return; const r = $('#stage').getBoundingClientRect(); G.thT = ((e.clientX - r.left) / r.width - .5) * .5; });
+  $('#stage').addEventListener('pointerleave', () => { if (!gyroOn && !drag) G.thT = 0; });
+  requestAnimationFrame(loop);
+}
+window.addEventListener('resize', () => { sizeGlass(); navPill(); segPill(); });
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { navPill(); segPill(); });
+boot();
+})();
+</script>
+</body>
+</html>
