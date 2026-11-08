@@ -40,6 +40,14 @@ button:focus-visible,input:focus-visible,label:focus-within{outline:2px solid va
 .aside p{font-size:13.5px;line-height:1.8;color:#5F5A53}
 .aside .tag{align-self:flex-start;font-size:11.5px;padding:4px 10px;border:1px solid #0002;border-radius:99px}
 
+/* 桌面装饰：水墨山 → 二维码，只在大屏显示，不影响布局 */
+.ink-art{display:none}
+@media (min-width:1200px){
+  .ink-art{display:block;position:fixed;left:26px;bottom:22px;width:min(340px,calc(50vw - 400px));aspect-ratio:1/1;pointer-events:none;z-index:0;
+    background:url("/ink-reveal.gif") center/contain no-repeat;
+    mix-blend-mode:darken;}
+}
+
 /* 外壳 */
 .app{position:relative;width:390px;height:min(844px,calc(100vh - 40px));border-radius:48px;background:var(--coal);overflow:hidden;overflow:clip;display:flex;flex-direction:column;box-shadow:0 40px 90px -30px #0008,0 0 0 1px #0003;isolation:isolate}
 @media (max-width:600px){
@@ -277,6 +285,8 @@ input[type=range]{width:100%;accent-color:var(--coal)}
 </style>
 </head>
 <body>
+
+<div class="ink-art" aria-hidden="true"></div>
 
 <div class="aside">
   <span class="tag">手机网页版 · 只有自动演示用虚拟数据</span>

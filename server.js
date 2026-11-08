@@ -220,11 +220,11 @@ function limited(ip, cost) {
 const AI_COST = { '/api/parse': 3, '/api/photo': 6, '/api/night': 2 };
 
 // ---------- 服务 ----------
-const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.png': 'image/png', '.svg': 'image/svg+xml', '.json': 'application/json', '.webmanifest': 'application/manifest+json' };
+const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.png': 'image/png', '.svg': 'image/svg+xml', '.gif': 'image/gif', '.json': 'application/json', '.webmanifest': 'application/manifest+json' };
 http.createServer(async (req, res) => {
-  const send = (code, body, type = 'application/json; charset=utf-8') => {
+  const send = (code, body, type = 'application/json; charset=utf-8', cache = 'no-store') => {
     if (res.headersSent) { try { res.end(); } catch (_) {} return; }
-    res.writeHead(code, { 'Content-Type': type, 'X-Content-Type-Options': 'nosniff', 'Cache-Control': 'no-store' });
+    res.writeHead(code, { 'Content-Type': type, 'X-Content-Type-Options': 'nosniff', 'Cache-Control': cache });
     res.end(typeof body === 'string' || Buffer.isBuffer(body) ? body : JSON.stringify(body));
   };
   try {
@@ -263,7 +263,10 @@ http.createServer(async (req, res) => {
     if (p === '/' || p === '\\') p = '/index.html';
     const file = path.join(PUB, p);
     if (file !== PUB && !file.startsWith(PUB + path.sep)) return send(403, 'forbidden', 'text/plain');
-    fs.readFile(file, (err, data) => err ? send(404, 'not found', 'text/plain') : send(200, data, TYPES[path.extname(file)] || 'application/octet-stream'));
+    const ext = path.extname(file);
+    // 图片/脚本可以缓存，html 保持及时更新
+    const cache = ext === '.html' ? 'no-store' : 'public, max-age=86400';
+    fs.readFile(file, (err, data) => err ? send(404, 'not found', 'text/plain') : send(200, data, TYPES[ext] || 'application/octet-stream', cache));
   } catch (e) {
     // 单个坏请求不能把进程带崩（Node 15+ 未捕获的 rejection 会直接退出）
     console.error('handler', e && e.message);
